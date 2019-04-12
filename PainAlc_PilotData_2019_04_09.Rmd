@@ -1,0 +1,530 @@
+---
+title: "ASQ_pilot"
+author: "Jason"
+date: "4/4/2019"
+modified: "09/04/2019"
+modified: "10/04/2019"
+modified: "12/04/2019"
+output: html_document
+---
+## R Markdown setup
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+To begin, one has to have an idea of what packages R will need to load to accomplish your goals. The packages below are the ones I will need to analyze the pilot data.
+
+These are ASQ pilot analyses are for the alcohol grant.
+
+```{r}
+library(readxl) # This is used to import data from excel
+library(tidyverse)
+library(ez)
+#library(Hmisc)
+#library(reshape2)
+
+library(here)
+here() # THIS SETS THE WORKING DIRECTORY TO THE LOCATION OF THIS FILE
+dr_here(show_reason = TRUE)
+
+```
+
+## SET THE WORKING DIRECTORY
+```{r}
+# where files are:
+# setwd("/Users/meredithjohnson/Box Sync/My Stuff/MyStuffForPainLab/Questionnaire Pilot Data")
+#setwd("/Users/jcraggs/Box Sync/Grants/Alcohol_Pain/PsychoPy_ASQ-Questionniares_Pilot_Data/")
+setwd("/Users/jcraggs/Box Sync/Grants/Alcohol_Pain/ASQ_pilot/")
+
+```
+
+## IMPORT DATA FOR THE PILOT ANALYSES
+```{r}
+#Read Data
+# Data exported from RedCap on April 4, 2019
+#data=read.csv('ImagingPsychometrics_DATA_2019-04-04_1240.csv')
+#data2=read.csv('ImagingPsychometrics_DATA_2019-04-04_1240.csv')
+data_ORIG=read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
+data2=read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
+#tbl_df(data2)
+#View(data2)
+```
+
+## SORT DATA BY A VARIABLE
+```{R}
+#	BOTH COMMANDS SORT THE DATA AND PRODUCE THE SAME RESULT
+arrange(data2, Count)
+#	arrange(data2, participant_id)
+```
+
+## EDIT DATA v1 - not using this code as of April 10, 2019
+```{r}
+# edit(data2)
+# select(data2, everything())
+# filter(data2, Count == 12)
+filter(data2, participant_id == "IP005")
+data3 <- select(data2, participant_id, max.temp)
+data3
+filter(data3, participant_id  == "IP005")
+filter(data3, participant_id  == "IP168")
+filter(data3, participant_id  == "IP183")
+data3
+data3[data3$participant_id == "IP005", "max.temp"] <- 50
+data3[data3$participant_id == "IP168", "max.temp"] <- 50
+data3[data3$participant_id == "IP183", "max.temp"] <- 48
+
+```
+
+## EDIT DATA v2
+```{r}
+#	CORRECTING AN ERROR IN THE MAX TEMP OF THREE SUBJECTS
+#	CHANGING THE max.temp VALUE
+data2[data2$participant_id == "IP005", "max.temp"] <- 50
+data2[data2$participant_id == "IP168", "max.temp"] <- 50
+data2[data2$participant_id == "IP183", "max.temp"] <- 48
+
+#	CREATING TEMPORARY DATA SUBSET
+tmp <- select(data2, participant_id, max.temp)
+#	CHECKING THAT THE CHANGE WAS MADE CORRECTLY
+filter(tmp, participant_id  == "IP005")
+filter(tmp, participant_id  == "IP168")
+filter(tmp, participant_id  == "IP183")
+
+#	REMOVING THE TEMPORARY DATA SET
+rm(tmp)
+
+#	SAVING THE NEW DATA SET
+save(data2, file = "ASQ_pilot.RData")
+rm(data2)
+#	LOADING THE NEW DATA SET
+load(file = "ASQ_pilot.RData")
+```
+
+
+##	ADDING NEW VARIABLES
+```{r}
+#	CREATE A SMALLER DATA SET
+asq_sm <- select(data2,
+				 participant_id,
+				 starts_with("asq"),
+				 starts_with("typical"),
+				 max.temp
+				 )
+# View(asq_sm)
+
+#	COMPUTE ASQ-L VALUES
+mutate(asq_sm, asq_l = mean(asq_1a + asq_2a)
+	   )
+#	ADD THE NEW VARIABLE TO THE SMALLER DATA SET
+asq_sm <-  mutate(asq_sm, asq_l = mean(asq_1a + asq_2a)
+	   )
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+## SELECTING SUBSETS OF VARIABLES
+```{r}
+iris
+filter(iris, Sepal.Length==5.1)
+select(iris, Sepal.Width, Petal.Length)
+```
+
+
+
+
+
+## SETTING LABELS
+```{r}
+#Setting Labels
+
+label(data$participant_id)="Participant ID"
+label(data$redcap_event_name)="Visit"
+label(data$sex)="Biological Sex"
+label(data$demo_dob)="Date of Birth"
+label(data$race___1)="Race: (choice=White)"
+label(data$race___2)="Race: (choice=Black or African American)"
+label(data$race___3)="Race: (choice=Native Hawaiian or Other Pacific Islander)"
+label(data$race___4)="Race: (choice=Asian)"
+label(data$race___5)="Race: (choice=American Indian/Alaskan Native)"
+label(data$race___6)="Race: (choice=Other)"
+label(data$ethnic_category)="Ethnic Category"
+label(data$employed)="Are you presently employed?"
+label(data$cohabitation)="Does anyone live with you?"
+label(data$marital_status)="What is your marital status?"
+label(data$education)="What is your highest level of education?"
+label(data$prior_pain_about)="if yes, when, where, and what type of treatment was recieved"
+label(data$chronic_pain)="Have you been clinically diagnosed with a chronic pain condition?"
+label(data$condition)="Right now, I fit into which category:"
+label(data$paintype)="What type of chronic pain do you have?"
+label(data$painduration)="How long have you been experiencing said pain?"
+label(data$paintype2)="Calculated Pain Type"
+label(data$paintype4)="Calculated Pain"
+label(data$group)="Calculated Group"
+label(data$mcgill1)="Group 1"
+label(data$mcgill2)="Group 2"
+label(data$mcgill3)="Group 3"
+label(data$mcgill4)="Group 4"
+label(data$mcgill5)="Group 5"
+label(data$mcgill6)="Group 6"
+label(data$mcgill7)="Group 7"
+label(data$mcgill8)="Group 8"
+label(data$mcgill9)="Group 9"
+label(data$mcgill10)="Group 10"
+label(data$mcgill11)="Group 11"
+label(data$mcgill12)="Group 12"
+label(data$mcgill13)="Group 13"
+label(data$mcgill14)="Group 14"
+label(data$mcgill15)="Group 15"
+label(data$mcgill16)="Group 16"
+label(data$mcgill17)="Group 17"
+label(data$mcgill18)="Group 18"
+label(data$mcgill19)="Group 19"
+label(data$mcgill20)="Group 20"
+label(data$bdi1)="1. Sadness"
+label(data$bdi2)="2. Pessimism"
+label(data$bdi3)="3. Past failure"
+label(data$bdi4)="4. Loss of pleasure"
+label(data$bdi5)="5. Guilty feelings"
+label(data$bdi6)="6. Punishment feelings"
+label(data$bdi7)="7. Self-dislike"
+label(data$bdi8)="8. Self criticalness"
+label(data$bdi9)="9. Suicidal thoughts or wishes"
+label(data$bdi10)="10. Crying"
+label(data$bdi11)="11. Agitation"
+label(data$bdi12)="12. Loss of interest"
+label(data$bdi13)="13. Indecisiveness"
+label(data$bdi14)="14. Worthlessness"
+label(data$bdi15)="15. Loss of energy"
+label(data$bdi16)="16. Changes in sleep pattern"
+label(data$bdi17)="17. Irritability"
+label(data$bdi18)="18. Changes in appetite"
+label(data$bdi19)="19. Concentration difficulty"
+label(data$bdi20)="20. Tiredness or fatigue"
+label(data$bdi21)="21. Loss of interest in sex"
+label(data$pdi1)="Family: This category refers to activities related to the home or family. It includes chores or duties performed around the house (e.g., yard work) and errands or favors for other family members (e.g., driving the children to school)."
+label(data$pdi2)="Recreation: This category includes hobbies, sports, and other similar leisure time activities"
+label(data$pdi3)="Social activity: This category refers to activities which involve participation with friends and acquaintances other than family members. It includes parties, theater, concerts, dining out, and other social functions"
+label(data$pdi4)="Occupation: This category refers to activities that are a part of or directly related to ones job. This includes non-paying jobs as well, such as that of a house-wife or volunteer worker"
+label(data$pdi5)="Sexual behavior: This category refers to the frequency and qaulity of ones sex life."
+label(data$pdi6)="Self-care: This category includes activities which involve personal maintenance and independent daily living (e.g., taking a shower, driving, getting dressed, etc.)."
+label(data$pdi7)="Life-support activity: This category refers to basic life-supporting behaviors such as eating, sleeping, and breathing."
+label(data$asq_1)="1. Do you ever become more talkative after drinking alcohol?"
+label(data$asq_1a)="1a. What is the minimum number of drinks you could consume before becoming more talkative?"
+label(data$asq_2)="2. Do you ever become more flirtatious after drinking alcohol?"
+label(data$asq_2a)="2a. What is the minimum number of drinks you could consume before becoming more flirtatious?"
+label(data$asq_3)="3. Do you ever feel high or buzzed after drinking alcohol?"
+label(data$asq_3a)="3a. What is the minimum number of drinks you could consume before feeling high or buzzed?"
+label(data$asq_4)="4. Do you ever feel more socially at ease after drinking alcohol?"
+label(data$asq_4a)="4a. What is the minimum number of drinks you could consume before feeling more socially at ease?"
+label(data$asq_5)="5. Do you ever feel more relaxed after drinking alcohol?"
+label(data$asq_5a)="5a. What is the minimum number of drinks you could consume before feeling more relaxed?"
+label(data$asq_6)="6. Do you ever feel sluggish after drinking alcohol?"
+label(data$asq_6a)="6a. What is the minimum number of drinks you could consume before feeling sluggish?"
+label(data$asq_7)="7. Do you ever feel less inhibited after drinking alcohol?"
+label(data$asq_7a)="7a. What is the minimum number of drinks you could consume before feeling less inhibited?"
+label(data$asq_8)="8. Do you ever feel that your driving would be affected after drinking alcohol?"
+label(data$asq_8a)="8a. What is the minimum number of drinks you could consume before feeling your driving would be affected?"
+label(data$asq_9)="9. Do you ever feel sedated or sleepy after drinking alcohol?"
+label(data$asq_9a)="9a. What is the minimum number of drinks you could consume before feeling sedated or sleepy?"
+label(data$asq_10)="10. Do you ever experience a hangover after drinking alcohol? By hangover, we mean that the day after an evening of drinking, you feel shaky, weak or have a headache."
+label(data$asq_10a)="10a. What is the maximum number of drinks you could consume in an evening without experiencing a hangover the next morning?"
+label(data$asq_11)="11. Do you ever pass out after drinking alcohol?"
+label(data$asq_11a)="11a. What is the maximum number of drinks you could consume in an evening without passing out?"
+label(data$asq_12)="12. Do you ever throw up (vomit) after drinking alcohol?"
+label(data$asq_12a)="12a. What is the maximum number of drinks you could consume in an evening without throwing up?"
+label(data$asq_13)="13. Do you ever feel nauseated after drinking alcohol?"
+label(data$asq_13a)="13a. What is the maximum number of drinks you could consume in an evening without feeling nauseated?"
+label(data$asq_14)="14. Do you ever forget a part of the evening (i.e., blackouts) after drinking alcohol?"
+label(data$asq_14a)="14a. What is the maximum number of drinks you could consume in an evening without forgetting part of the evening or blacking out?"
+label(data$asq_15)="15. Do you ever feel dizzy or feel things spinning after drinking alcohol?"
+label(data$asq_15a)="15a. What is the maximum number of drinks you could consume in an evening without feeling dizzy or feeling things spinning?"
+label(data$typical_alc_use1)="16. Think of all the times in the past THREE MONTHS when you had something to drink.  How often have you had some kind of beverage containing alcohol?"
+label(data$typical_alc_use2)="17. In the past three months, when you were drinking alcohol, how many drinks did you usually have on any one occasion?"
+label(data$rl_foot_43)="Right or Left Foot"
+label(data$painrating_43)="Pain Rating?"
+label(data$rl_foot_44)="Right or Left Foot"
+label(data$painrating_44)="Pain Rating?"
+label(data$rl_foot_45)="Right or Left Foot"
+label(data$painrating_45)="Pain Rating?"
+label(data$rl_foot_46)="Right or Left Foot"
+label(data$painrating_46)="Pain Rating?"
+label(data$rl_foot_47)="Right or Left Foot"
+label(data$painrating_47)="Pain Rating?"
+label(data$rl_foot_48)="Right or Left Foot"
+label(data$painrating_48)="Pain Rating?"
+label(data$rl_foot_49)="Right or Left Foot"
+label(data$painrating_49)="Pain Rating?"
+label(data$rl_foot_50)="Right or Left Foot"
+label(data$painrating_50)="Pain Rating?"
+label(data$calibrationvisit)="For which visit was calibration done?"
+label(data$calibration_data_complete)="Complete?"
+label(data$ess_total)="Epworth Sleepiness Score"
+label(data$psqi_component1)="PSQI Component1: Subjective Sleep Quality"
+label(data$psqi_calcforcomponent2)="Intermediate calculation for component 2, please ignore for scoring."
+label(data$psqi_component2)="PSQI Component2: Sleep Latency"
+label(data$psqi_component3)="PSQI Component3: Sleep duration"
+label(data$psqi_calcforcomponent5)="Intermediate calculation for component 5, please ignore when scoring."
+label(data$psqi_component5)="PSQI Component5: Sleep disturbances"
+label(data$psqi_component6)="PSQI Component6: Use of Sleeping Medication"
+label(data$psqi_component7)="PSQI Component7: Daytime Dysfunction"
+label(data$isi_total)="Insomnia Severity Index Total Score"
+label(data$mcgill_total)="McGill Total Score"
+label(data$bdi_total)="Beck Depression Inventory Total Score"
+label(data$pdi_total)="Pain Disability Inventory Total Score"
+label(data$pill_total)="Pennebaker Inventory of Limbic Languidness"
+label(data$stait_total)="STAI-T Total Score"
+label(data$calculated_survey_scores_complete)="Complete?"
+label(data$visit3condition)="Visit 3 Condition:"
+label(data$visit3moodpre)="Pre Music MOOD Rating:"
+label(data$visit3moodpost)="Post Music MOOD Rating:"
+label(data$visit3moodchange)="Mood change:"
+label(data$visit3painpre)="Pre Music PAIN Rating:"
+label(data$visit3painpost)="Post Music PAIN Rating"
+label(data$visit3painchange)="Pain change:"
+label(data$visit3painf1)="F1 Pain Rating:"
+label(data$visit3painf2)="F2 Pain Rating:"
+label(data$visit3painf3)="F3 Pain Rating:"
+label(data$visit3painf4)="F4 Pain Rating:"
+label(data$mood_and_pain_v3_complete)="Complete?"
+label(data$visit4condition)="Visit 4 Condition:"
+label(data$visit4moodpre)="Pre Music MOOD Rating:"
+label(data$visit4moodpost)="Post Music MOOD Rating:"
+label(data$visit4moodchange)="Mood Change:"
+label(data$visit4painpre)="Pre Music PAIN Rating"
+label(data$visit4painpost)="Post Music PAIN Rating"
+label(data$visit4painchange)="Pain Change:"
+label(data$visit4painf1)="F1 Pain Rating:"
+label(data$visit4painf2)="F2 Pain Rating:"
+label(data$visit4painf3)="F3 Pain Rating:"
+label(data$visit4painf4)="F4 Pain Rating:"
+label(data$mood_and_pain_v4_complete)="Complete?"
+
+```
+
+
+## SETTING UNITS
+
+## SETTING FACTORS #1
+```{r}
+#Setting Factors(will create new variable for factors)
+data$redcap_event_name.factor = factor(data$redcap_event_name,levels=c("baseline_data_arm_1","session_2_arm_1","session_3_arm_1","session_4_arm_1"))
+data$sex.factor = factor(data$sex,levels=c("1","2"))
+data$race___1.factor = factor(data$race___1,levels=c("0","1"))
+data$race___2.factor = factor(data$race___2,levels=c("0","1"))
+data$race___3.factor = factor(data$race___3,levels=c("0","1"))
+data$race___4.factor = factor(data$race___4,levels=c("0","1"))
+data$race___5.factor = factor(data$race___5,levels=c("0","1"))
+data$race___6.factor = factor(data$race___6,levels=c("0","1"))
+data$ethnic_category.factor = factor(data$ethnic_category,levels=c("1","2"))
+data$employed.factor = factor(data$employed,levels=c("1","2"))
+data$marital_status.factor = factor(data$marital_status,levels=c("1","2","3","4","5","6"))
+data$education.factor = factor(data$education,levels=c("1","2","3","4","5","6"))
+data$chronic_pain.factor = factor(data$chronic_pain,levels=c("1","2"))
+data$condition.factor = factor(data$condition,levels=c("1","2"))
+data$paintype.factor = factor(data$paintype,levels=c("1","2"))
+data$mcgill1.factor = factor(data$mcgill1,levels=c("1","2","3","4","5","6"))
+data$mcgill2.factor = factor(data$mcgill2,levels=c("1","2","3"))
+data$mcgill3.factor = factor(data$mcgill3,levels=c("1","2","3","4","5"))
+data$mcgill4.factor = factor(data$mcgill4,levels=c("1","2","3"))
+data$mcgill5.factor = factor(data$mcgill5,levels=c("1","2","3","4","5"))
+data$mcgill6.factor = factor(data$mcgill6,levels=c("1","2","3"))
+data$mcgill7.factor = factor(data$mcgill7,levels=c("1","2","3","4"))
+data$mcgill8.factor = factor(data$mcgill8,levels=c("1","2","3","4"))
+data$mcgill9.factor = factor(data$mcgill9,levels=c("1","2","3","4","5"))
+data$mcgill10.factor = factor(data$mcgill10,levels=c("1","2","3","4"))
+data$mcgill11.factor = factor(data$mcgill11,levels=c("1","2"))
+data$mcgill12.factor = factor(data$mcgill12,levels=c("1","2"))
+data$mcgill13.factor = factor(data$mcgill13,levels=c("1","2","3"))
+data$mcgill14.factor = factor(data$mcgill14,levels=c("1","2","3","4","5"))
+data$mcgill15.factor = factor(data$mcgill15,levels=c("1","2"))
+data$mcgill16.factor = factor(data$mcgill16,levels=c("1","2","3","4","5"))
+data$mcgill17.factor = factor(data$mcgill17,levels=c("1","2","3","4"))
+data$mcgill18.factor = factor(data$mcgill18,levels=c("1","2","3","4","5"))
+data$mcgill19.factor = factor(data$mcgill19,levels=c("1","2","3"))
+data$mcgill20.factor = factor(data$mcgill20,levels=c("1","2","3","4","5"))
+data$bdi1.factor = factor(data$bdi1,levels=c("0","1","2","3"))
+data$bdi2.factor = factor(data$bdi2,levels=c("0","1","2","3"))
+data$bdi3.factor = factor(data$bdi3,levels=c("0","1","2","3"))
+data$bdi4.factor = factor(data$bdi4,levels=c("0","1","2","3"))
+data$bdi5.factor = factor(data$bdi5,levels=c("0","1","2","3"))
+data$bdi6.factor = factor(data$bdi6,levels=c("0","1","2","3"))
+data$bdi7.factor = factor(data$bdi7,levels=c("0","1","2","3"))
+data$bdi8.factor = factor(data$bdi8,levels=c("0","1","2","3"))
+data$bdi9.factor = factor(data$bdi9,levels=c("0","1","2","3"))
+data$bdi10.factor = factor(data$bdi10,levels=c("0","1","2","3"))
+data$bdi11.factor = factor(data$bdi11,levels=c("0","1","2","3"))
+data$bdi12.factor = factor(data$bdi12,levels=c("0","1","2","3"))
+data$bdi13.factor = factor(data$bdi13,levels=c("0","1","2","3"))
+data$bdi14.factor = factor(data$bdi14,levels=c("0","1","2","3"))
+data$bdi15.factor = factor(data$bdi15,levels=c("0","1","2","3"))
+data$bdi16.factor = factor(data$bdi16,levels=c("0","1","2","3"))
+data$bdi17.factor = factor(data$bdi17,levels=c("0","1","2","3"))
+data$bdi18.factor = factor(data$bdi18,levels=c("0","1","2","3"))
+data$bdi19.factor = factor(data$bdi19,levels=c("0","1","2","3"))
+data$bdi20.factor = factor(data$bdi20,levels=c("0","1","2","3"))
+data$bdi21.factor = factor(data$bdi21,levels=c("0","1","2","3"))
+data$asq_1.factor = factor(data$asq_1,levels=c("1","0"))
+data$asq_2.factor = factor(data$asq_2,levels=c("1","0"))
+data$asq_3.factor = factor(data$asq_3,levels=c("1","0"))
+data$asq_4.factor = factor(data$asq_4,levels=c("1","0"))
+data$asq_5.factor = factor(data$asq_5,levels=c("1","0"))
+data$asq_6.factor = factor(data$asq_6,levels=c("1","0"))
+data$asq_7.factor = factor(data$asq_7,levels=c("1","0"))
+data$asq_8.factor = factor(data$asq_8,levels=c("1","0"))
+data$asq_9.factor = factor(data$asq_9,levels=c("1","0"))
+data$asq_10.factor = factor(data$asq_10,levels=c("1","0"))
+data$asq_11.factor = factor(data$asq_11,levels=c("1","0"))
+data$asq_12.factor = factor(data$asq_12,levels=c("1","0"))
+data$asq_13.factor = factor(data$asq_13,levels=c("1","0"))
+data$asq_14.factor = factor(data$asq_14,levels=c("1","0"))
+data$asq_15.factor = factor(data$asq_15,levels=c("1","0"))
+data$typical_alc_use1.factor = factor(data$typical_alc_use1,levels=c("0","1","2","3","4","5","6","7","8","9"))
+data$typical_alc_use2.factor = factor(data$typical_alc_use2,levels=c("0","1","2","3","4","5","6","7","8","9","10"))
+data$rl_foot_43.factor = factor(data$rl_foot_43,levels=c("1","2"))
+data$rl_foot_44.factor = factor(data$rl_foot_44,levels=c("1","2"))
+data$rl_foot_45.factor = factor(data$rl_foot_45,levels=c("1","2"))
+data$rl_foot_46.factor = factor(data$rl_foot_46,levels=c("1","2"))
+data$rl_foot_47.factor = factor(data$rl_foot_47,levels=c("1","2"))
+data$rl_foot_48.factor = factor(data$rl_foot_48,levels=c("1","2"))
+data$rl_foot_49.factor = factor(data$rl_foot_49,levels=c("1","2"))
+data$rl_foot_50.factor = factor(data$rl_foot_50,levels=c("1","2"))
+data$calibration_data_complete.factor = factor(data$calibration_data_complete,levels=c("0","1","2"))
+data$calculated_survey_scores_complete.factor = factor(data$calculated_survey_scores_complete,levels=c("0","1","2"))
+data$visit3condition.factor = factor(data$visit3condition,levels=c("1","2"))
+data$mood_and_pain_v3_complete.factor = factor(data$mood_and_pain_v3_complete,levels=c("0","1","2"))
+data$visit4condition.factor = factor(data$visit4condition,levels=c("1","2"))
+data$mood_and_pain_v4_complete.factor = factor(data$mood_and_pain_v4_complete,levels=c("0","1","2"))
+
+
+```
+
+## SETTING FACTORS #2
+```{R}
+#Setting Factors(will create new variable for factors)
+levels(data$redcap_event_name.factor)=c("Baseline Data","Session 2","Session 3","Session 4")
+levels(data$sex.factor)=c("Male","Female")
+levels(data$race___1.factor)=c("Unchecked","Checked")
+levels(data$race___2.factor)=c("Unchecked","Checked")
+levels(data$race___3.factor)=c("Unchecked","Checked")
+levels(data$race___4.factor)=c("Unchecked","Checked")
+levels(data$race___5.factor)=c("Unchecked","Checked")
+levels(data$race___6.factor)=c("Unchecked","Checked")
+levels(data$ethnic_category.factor)=c("Hispanic or Latino","Not Hispanic or Latino")
+levels(data$employed.factor)=c("Yes","No")
+levels(data$marital_status.factor)=c("Married","Single","Cohabitating with partner","Widowed","Divorced","Seperated")
+levels(data$education.factor)=c("High School/GED","Some college/not completed","Associates","Bachelors","Masters","Doctorate")
+levels(data$chronic_pain.factor)=c("Yes","No")
+levels(data$condition.factor)=c("Healthy/No pain","Chronic pain")
+levels(data$paintype.factor)=c("Chronic low back pain","Fibromyalgia")
+levels(data$mcgill1.factor)=c("Flickering","Quivering","Pulsing","Throbbing","Beating","Pounding")
+levels(data$mcgill2.factor)=c("Jumping","Flashing","Shooting")
+levels(data$mcgill3.factor)=c("Pricking","Boring","Drilling","Stabbing","Lancinating")
+levels(data$mcgill4.factor)=c("Sharp","Cutting","Lacerating")
+levels(data$mcgill5.factor)=c("Pinching","Pressing","Gnawing","Cramping","Crushing")
+levels(data$mcgill6.factor)=c("Tugging","Pulling","Wrenching")
+levels(data$mcgill7.factor)=c("Hot","Burning","Scalding","Searing")
+levels(data$mcgill8.factor)=c("Tingling","Itchy","Smarting","Stinging")
+levels(data$mcgill9.factor)=c("Dull","Sore","Hurting","Aching","Heavy")
+levels(data$mcgill10.factor)=c("Tender","Taut","Rasping","Splitting")
+levels(data$mcgill11.factor)=c("Tiring","Exhausting")
+levels(data$mcgill12.factor)=c("Sickening","Suffocating")
+levels(data$mcgill13.factor)=c("Fearful","Frightful","Terrifying")
+levels(data$mcgill14.factor)=c("Punishing","Grueling","Cruel","Vicious","Killing")
+levels(data$mcgill15.factor)=c("Wretched","Blinding")
+levels(data$mcgill16.factor)=c("Annoying","Troublesome","Miserable","Intense","Unbearable")
+levels(data$mcgill17.factor)=c("Spreading","Radiating","Penetrating","Piercing")
+levels(data$mcgill18.factor)=c("Tight","Numb","Drawing","Squeezing","Tearful")
+levels(data$mcgill19.factor)=c("Cool","Cold","Freezing")
+levels(data$mcgill20.factor)=c("Nagging","Nauseating","Agonizing","Dreadful","Torturing")
+levels(data$bdi1.factor)=c("I do not feel sad.","I feel sad much of the time.","I am sad all the time.","I am so sad and unhappy that I cant stand it.")
+levels(data$bdi2.factor)=c("I am not discouraged about the future.","I feel more discouraged about my future than I used to be.","I do not expect things to work out for me.","I feel my future is hopeless and will only get worse.")
+levels(data$bdi3.factor)=c("I do not feel like a failure.","I have failed more than I should have.","As I look back, I see a lot of failures.","I feel I am a total failure as a person.")
+levels(data$bdi4.factor)=c("I get as much pleasure as I ever did from the things I enjoy.","I dont enjoy things as much as I used to.","I get very little pleasure from the things I used to enjoy.","I cant get any pleasure from the things I used to enjoy.")
+levels(data$bdi5.factor)=c("I dont feel particularly guilty","I feel guilty over many things I have done or should have done.","I feel quite guilty most of the time.","I feel guilty all of the time.")
+levels(data$bdi6.factor)=c("I dont feel I am being punished.","I feel I may be punished.","I expect to be punished.","I feel I am being punished.")
+levels(data$bdi7.factor)=c("I feel the same about myself as ever.","I have lost confidence in myself.","I am disappointed in myself.","I dislike myself.")
+levels(data$bdi8.factor)=c("I dont criticize or blame myself more than usual.","I am more critical of myself than I used to be.","I criticize myself for all of my faults.","I blame myself for everything bad that happens.")
+levels(data$bdi9.factor)=c("I dont have any thoughts of killing myself.","I have thoughts of killing myself, but I would not carry them out.","I would like to kill myself.","I would kill myself if I had the chance.")
+levels(data$bdi10.factor)=c("I dont cry anymore than I used to.","I cry more than I used to.","I cry over every little thing.","I feel like crying, but I cant.")
+levels(data$bdi11.factor)=c("I am no more restless or wound up than usual.","I feel more restless or wound up than usual.","I am so restless or agitated that its hard to stay still.","I am so restless or agitated that I have to keep moving or doing something.")
+levels(data$bdi12.factor)=c("I have not lost interest in other people or activities.","I am less interested in other people or things than before.","I have lost most of my interest in other people or things.","Its hard to get interested in anything.")
+levels(data$bdi13.factor)=c("I make decisions about as well ever.","I find it more difficult to make decisions than usual.","I have much greater difficulty in making decisions than I used to.","I have trouble making any decisions.")
+levels(data$bdi14.factor)=c("I do not feel that I am worthless.","I dont consider myself as worthwhile and useful as I used to.","I feel more worthless as compared to other people.","I feel utterly worthless.")
+levels(data$bdi15.factor)=c("I have as much energy as ever.","I have less energy than I used to have.","I dont have enough energy to do very much.","I dont have enough energy to do anything.")
+levels(data$bdi16.factor)=c("I have not experienced any change in my sleeping pattern.","I sleep somewhat more/less than usual.","I sleep a lot more/less than usual.","I sleep most of the day OR I wake up 1-2 hours early and can could back to sleep.")
+levels(data$bdi17.factor)=c("I am no more irritable than usual.","I am more irritable than usual.","I am much more irritable than usual.","I am irritable all the time.")
+levels(data$bdi18.factor)=c("I have not experienced any change in my appetite.","My appetite is somewhat greater/less than usual.","My appetite is much greater/less than usual.","I have no appetite at all OR I crave food all the time.")
+levels(data$bdi19.factor)=c("I can concentrate as well as ever.","I cant concentrate as well as usual.","Its hard to keep my mind on anything for very long.","I find I cant concentrate on anything.")
+levels(data$bdi20.factor)=c("I am no more tired or fatigued than usual.","I get more tired or fatigued more easily than usual.","I am too tired or fatigued to do a lot of the things I used to do.","I am too tired or fatigued to do most of the things I used to do.")
+levels(data$bdi21.factor)=c("I have not noticed any recent change in my interest in sex.","I am less interested in sex than I used to be.","I am much less interested in sex now.","I have lost interest in sex completely.")
+levels(data$asq_1.factor)=c("Yes","No")
+levels(data$asq_2.factor)=c("Yes","No")
+levels(data$asq_3.factor)=c("Yes","No")
+levels(data$asq_4.factor)=c("Yes","No")
+levels(data$asq_5.factor)=c("Yes","No")
+levels(data$asq_6.factor)=c("Yes","No")
+levels(data$asq_7.factor)=c("Yes","No")
+levels(data$asq_8.factor)=c("Yes","No")
+levels(data$asq_9.factor)=c("Yes","No")
+levels(data$asq_10.factor)=c("Yes","No")
+levels(data$asq_11.factor)=c("Yes","No")
+levels(data$asq_12.factor)=c("Yes","No")
+levels(data$asq_13.factor)=c("Yes","No")
+levels(data$asq_14.factor)=c("Yes","No")
+levels(data$asq_15.factor)=c("Yes","No")
+levels(data$typical_alc_use1.factor)=c("I didnt drink in the past three months","1 time in the past three months","2 times in the past three months","About once a month","2-3 times a month","Once or twice a week","3-4 times a week","Nearly every day","Once a day","Twice a day or more")
+levels(data$typical_alc_use2.factor)=c("Did not drink in the past 3 months","1 drink","2 drinks","3 drinks","4 drinks","5 drinks","6 drinks","7 drinks","8 drinks","9 to 11 drinks","12 or more drinks")
+levels(data$rl_foot_43.factor)=c("Left","Right")
+levels(data$rl_foot_44.factor)=c("Left","Right")
+levels(data$rl_foot_45.factor)=c("Left","Right")
+levels(data$rl_foot_46.factor)=c("Left","Right")
+levels(data$rl_foot_47.factor)=c("Left","Right")
+levels(data$rl_foot_48.factor)=c("Left","Right")
+levels(data$rl_foot_49.factor)=c("Left","Right")
+levels(data$rl_foot_50.factor)=c("Left","Right")
+levels(data$calibration_data_complete.factor)=c("Incomplete","Unverified","Complete")
+levels(data$calculated_survey_scores_complete.factor)=c("Incomplete","Unverified","Complete")
+levels(data$visit3condition.factor)=c("Positive Mood","Negative Mood")
+levels(data$mood_and_pain_v3_complete.factor)=c("Incomplete","Unverified","Complete")
+levels(data$visit4condition.factor)=c("Positive Mood","Negative Mood")
+levels(data$mood_and_pain_v4_complete.factor)=c("Incomplete","Unverified","Complete")
+
+```
+
+```{r}
+COMPUTE male=(sex="1").
+
+#mynames <- names(data)
+#data2 <- vars_select(data, starts_with("asq_"))
+
+#nms <- names(iris)
+#nms2 <- vars_select(nms, starts_with("Petal"))
+```
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
