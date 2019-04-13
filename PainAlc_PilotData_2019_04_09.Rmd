@@ -19,7 +19,7 @@ To begin, one has to have an idea of what packages R will need to load to accomp
 ```{r}
 library(readxl) # This is used to import data from excel
 library(tidyverse)
-library(ez)
+#library(ez)
 #library(Hmisc)
 #library(reshape2)
 
@@ -32,28 +32,30 @@ dr_here(show_reason = TRUE)
 ## SET THE WORKING DIRECTORY
 ```{r}
 # where files are:
-# setwd("/Users/meredithjohnson/Box Sync/My Stuff/MyStuffForPainLab/Questionnaire Pilot Data")
-#setwd("/Users/jcraggs/Box Sync/Grants/Alcohol_Pain/PsychoPy_ASQ-Questionniares_Pilot_Data/")
 setwd("/Users/jcraggs/Documents/git/Rstudio/ASQ_pilot/")
-
 ```
 
 ## IMPORT DATA FOR THE PILOT ANALYSES
 ```{r}
 #Read Data
 # Data exported from RedCap on April 4, 2019
-#data=read.csv('ImagingPsychometrics_DATA_2019-04-04_1240.csv')
-#data2=read.csv('ImagingPsychometrics_DATA_2019-04-04_1240.csv')
 data_ORIG=read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
 data2=read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
+data2 <- as_tibble(data2)
 
-data3 <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/ASQ_pilot/master/ASQ_pilot_2019_04_09.csv'), header = TRUE)
+#	RAW DATA ON GITHUB
+#data3 <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/ASQ_pilot/master/ASQ_pilot_2019_04_09.csv'), header = TRUE)
 
-
-#tbl_df(data2)
 #View(data2)
 ```
 
+## CHECK THAT THE DATA ARE OF THE CORRECT FORMAT/TYPE
+```{r}
+#	CHECK WHICH VARIABLES ARE CODED AS FACTORS AND THEIR LEVELS
+dataFactors <- select_if(data2, is.factor)
+colnames(dataFactors)
+levels(dataFactors$painduration)
+```
 ## SORT DATA BY A VARIABLE
 ```{R}
 #	BOTH COMMANDS SORT THE DATA AND PRODUCE THE SAME RESULT
@@ -69,37 +71,22 @@ arrange(data2, Count)
 data2[data2$participant_id == "IP005", "max.temp"] <- 50
 data2[data2$participant_id == "IP168", "max.temp"] <- 50
 data2[data2$participant_id == "IP183", "max.temp"] <- 48
-data2[data2$asq_15a  == "#DIV/0!", "asq_15a"] <- "NA"
 
 #	CREATING TEMPORARY DATA SUBSET
-tmp <- select(data2, participant_id, max.temp, asq_15a)
+tmp <- select(data2, participant_id, max.temp)
+
 #	CHECKING THAT THE CHANGE WAS MADE CORRECTLY
 filter(tmp, participant_id  == "IP005")
 filter(tmp, participant_id  == "IP168")
 filter(tmp, participant_id  == "IP183")
 
-tmp <- select(data2, participant_id, contains("asq"))
-
-tmp2 <- as_tibble(select(data2, participant_id, contains("asq_15")))
-
-tmp3 <- as_tibble(select(data2, contains("asq_15")))
-tmp3
-tmp4 <- mutate_if(tmp3, is.factor, as.numeric(as.character(tmp3,"asq_15a")))
-
-tmp5
-
-tmp[tmp$starts_with("asq") == "#DIV/0!", starts_with("asq")] <- "NA"
-
-
-filter(tmp, asq_15a == "#DIV/0!") <- "NA" 
-
 #	REMOVING THE TEMPORARY DATA SET
 rm(tmp)
 
 #	SAVING THE NEW DATA SET
-save(data2, file = "ASQ_pilot.RData")
+save(data2, dataFactors, file = "ASQ_pilot.RData")
 #	CLEAR data2 FROM THE ENVIRONMENT
-rm(data2)
+rm(data2, dataFactors)
 #	LOAD  THE NEW DATA SET
 load(file = "ASQ_pilot.RData")
 ```
@@ -110,19 +97,24 @@ load(file = "ASQ_pilot.RData")
 #	CREATE A SMALLER DATA SET
 asq_sm <- select(data2,
 				 participant_id,
-				 starts_with("asq"),
-				 starts_with("typical"),
+				 #ends_with("a"),
+				 matches("asq_..a"), #	REGULAR EXPRESSION
+				 #starts_with("typical"),
 				 max.temp
 				 )
-View(asq_sm)
+#View(asq_sm)
 
 #	COMPUTE MEAN ASQ VALUES
-mutate(asq_sm, asq_l = mean(asq_14a + asq_15a)	  
-	   )
-#	ADD THE NEW VARIABLE TO THE SMALLER DATA SET
-asq_sm <-  mutate(asq_sm, asq_l = mean(asq_14a  asq_15a)
-	   )
-aver
+mutate(asq_sm,
+	   asq_light = (asq_13a + asq_14a + asq_15a) / 3  )
+
+#mutate(asq_sm, asq_light2 = mean(asq_14a asq_15a))
+
+
+
+# #	ADD THE NEW VARIABLE TO THE SMALLER DATA SET
+# asq_sm <-  mutate(asq_sm,asq_l = mean(asq_14a  asq_15a) )
+
 ```
 
 
