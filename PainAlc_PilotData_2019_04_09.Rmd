@@ -19,6 +19,8 @@ To begin, one has to have an idea of what packages R will need to load to accomp
 ```{r}
 library(readxl) # This is used to import data from excel
 library(tidyverse)
+library(purrr)
+library(ggplot2)
 #library(ez)
 #library(Hmisc)
 #library(reshape2)
@@ -92,32 +94,97 @@ load(file = "ASQ_pilot.RData")
 ```
 
 
-##	ADDING NEW VARIABLES
+##	COMPUTE ASQ-LIGHT
 ```{r}
-#	CREATE A SMALLER DATA SET
-asq_sm <- select(data2,
-				 participant_id,
-				 #ends_with("a"),
-				 matches("asq_..a"), #	REGULAR EXPRESSION
-				 #starts_with("typical"),
-				 max.temp
-				 )
-#View(asq_sm)
+# data2 %>% 
+data3 <- 
+	mutate(data2,
+		x = pmap_dbl(list(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
+						  asq_6a, asq_7a, asq_8a, asq_9a), function(...){
+			row_values <- unlist(list(...))
+			number_of_NAs <- sum(is.na(row_values))
+			map_dbl(number_of_NAs, ~ case_when(
+				.x == 0 ~ mean(row_values),
+				.x >= 1 ~ mean(row_values, na.rm = TRUE) #,
+				# .x == 1 ~ mean(row_values, na.rm = TRUE),
+				# .x == 2 ~ mean(row_values, na.rm = TRUE),
+				# .x == 3 ~ mean(row_values, na.rm = TRUE)
+			))
+		})
+	) %>% 
+	rename(asq_light = x )
 
-#	COMPUTE MEAN ASQ VALUES
-mutate(asq_sm,
-	   asq_light = (asq_13a + asq_14a + asq_15a) / 3  )
+```
 
-#mutate(asq_sm, asq_light2 = mean(asq_14a asq_15a))
-
-
-
-# #	ADD THE NEW VARIABLE TO THE SMALLER DATA SET
-# asq_sm <-  mutate(asq_sm,asq_l = mean(asq_14a  asq_15a) )
+##	COMPUTE ASQ-HEAVY
+```{r}
+data3 <- 
+	mutate(data3,
+		x = pmap_dbl(list(asq_10a, asq_11a, asq_12a, asq_13a, asq_14a,
+						  asq_15a), function(...){
+			row_values <- unlist(list(...))
+			number_of_NAs <- sum(is.na(row_values))
+			map_dbl(number_of_NAs, ~ case_when(
+				.x == 0 ~ mean(row_values),
+				.x >= 1 ~ mean(row_values, na.rm = TRUE) #,
+				# .x == 1 ~ mean(row_values, na.rm = TRUE),
+				# .x == 2 ~ mean(row_values, na.rm = TRUE),
+				# .x == 3 ~ mean(row_values, na.rm = TRUE)
+			))
+		})
+	) %>% 
+	rename(asq_heavy = x)
 
 ```
 
 
+
+
+
+
+
+```{r}
+select(data2,
+	   participant_id,
+	   ends_with("a")
+	   # matches("asq_..a"), #	REGULAR EXPRESSION
+	   #starts_with("typical"),
+	   # max.temp
+)
+
+```
+
+
+
+
+```{r}
+my_data <- asq_sm
+
+#my_data %>% 
+my_data <- 
+	mutate(my_data,
+		x = pmap_dbl(list(asq_13a, asq_14a, asq_15a), function(...){
+			
+			row_values <- unlist(list(...))
+			
+			number_of_NAs <- sum(is.na(row_values))
+			
+			map_dbl(number_of_NAs, ~ case_when(
+				.x == 0 ~ mean(row_values),
+				.x == 1 ~ mean(row_values, na.rm = TRUE),
+				.x == 2 ~ mean(row_values, na.rm = TRUE),
+				.x == 3 ~ mean(row_values, na.rm = TRUE)
+			))
+		})
+	)
+my_data2 <- asq_sm
+
+my_data2 <- my_data2 my_data$x
+
+bind_cols(my_data2(x = 1), my_data(y = 9))
+
+
+```
 
 
 
@@ -541,4 +608,68 @@ data3[data3$participant_id == "IP005", "max.temp"] <- 50
 data3[data3$participant_id == "IP168", "max.temp"] <- 50
 data3[data3$participant_id == "IP183", "max.temp"] <- 48
 
+```
+
+
+
+
+##	ADDING NEW VARIABLES
+```{r}
+#	CREATE A SMALLER DATA SET
+asq_sm <- select(data2,
+				 participant_id,
+				 ends_with("a")
+				 # matches("asq_..a"), #	REGULAR EXPRESSION
+				 #starts_with("typical"),
+				 # max.temp
+				 )
+#View(asq_sm)
+
+#	COMPUTE asq_light
+asq_sm <- 
+	mutate(asq_sm,
+		x = pmap_dbl(list(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
+						  asq_6a, asq_7a, asq_8a, asq_9a), function(...){
+			row_values <- unlist(list(...))
+			number_of_NAs <- sum(is.na(row_values))
+			map_dbl(number_of_NAs, ~ case_when(
+				.x == 0 ~ mean(row_values),
+				.x >= 1 ~ mean(row_values, na.rm = TRUE) #,
+				# .x == 1 ~ mean(row_values, na.rm = TRUE),
+				# .x == 2 ~ mean(row_values, na.rm = TRUE),
+				# .x == 3 ~ mean(row_values, na.rm = TRUE)
+			))
+		})
+	)
+
+names(asq_sm)[names(asq_sm)=="x"] <- "asq_light"
+
+
+#	COMPUTW asq_h
+asq_sm <- 
+	mutate(asq_sm,
+		x = pmap_dbl(list(asq_10a, asq_11a, asq_12a, asq_13a, asq_14a,
+						  asq_15a), function(...){
+			row_values <- unlist(list(...))
+			number_of_NAs <- sum(is.na(row_values))
+			map_dbl(number_of_NAs, ~ case_when(
+				.x == 0 ~ mean(row_values),
+				.x >= 1 ~ mean(row_values, na.rm = TRUE) #,
+				# .x == 1 ~ mean(row_values, na.rm = TRUE),
+				# .x == 2 ~ mean(row_values, na.rm = TRUE),
+				# .x == 3 ~ mean(row_values, na.rm = TRUE)
+			))
+		})
+	)
+
+names(asq_sm)[names(asq_sm)=="x"] <- "asq_h"
+
+
+
+#mutate(asq_sm, asq_light2 = mean(asq_14a asq_15a))
+
+
+
+# #	ADD THE NEW VARIABLE TO THE SMALLER DATA SET
+# asq_sm <-  mutate(asq_sm,asq_l = mean(asq_14a  asq_15a) )
 ```
