@@ -139,7 +139,7 @@ data3 <-
 
 
 
-
+#####	STOP HERE AS OF April 13, 2019, 12:18 AM
 
 
 
