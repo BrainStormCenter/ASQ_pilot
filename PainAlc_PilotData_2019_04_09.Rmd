@@ -8,14 +8,13 @@ modified: "12/04/2019"
 output: html_document
 ---
 ## R Markdown setup
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-To begin, one has to have an idea of what packages R will need to load to accomplish your goals. The packages below are the ones I will need to analyze the pilot data.
-
 These are ASQ pilot analyses are for the alcohol grant.
+
+To begin, one has to have an idea of what packages R will need to load to accomplish your goals. The packages below are the ones I will need to analyze the ASQ pilot data.
 
 ```{r}
 library(readxl) # This is used to import data from excel
@@ -35,7 +34,7 @@ dr_here(show_reason = TRUE)
 # where files are:
 # setwd("/Users/meredithjohnson/Box Sync/My Stuff/MyStuffForPainLab/Questionnaire Pilot Data")
 #setwd("/Users/jcraggs/Box Sync/Grants/Alcohol_Pain/PsychoPy_ASQ-Questionniares_Pilot_Data/")
-setwd("/Users/jcraggs/Box Sync/Grants/Alcohol_Pain/ASQ_pilot/")
+setwd("/Users/jcraggs/Documents/git/Rstudio/ASQ_pilot/")
 
 ```
 
@@ -47,6 +46,10 @@ setwd("/Users/jcraggs/Box Sync/Grants/Alcohol_Pain/ASQ_pilot/")
 #data2=read.csv('ImagingPsychometrics_DATA_2019-04-04_1240.csv')
 data_ORIG=read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
 data2=read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
+
+data3 <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/ASQ_pilot/master/ASQ_pilot_2019_04_09.csv'), header = TRUE)
+
+
 #tbl_df(data2)
 #View(data2)
 ```
@@ -58,46 +61,46 @@ arrange(data2, Count)
 #	arrange(data2, participant_id)
 ```
 
-## EDIT DATA v1 - not using this code as of April 10, 2019
-```{r}
-# edit(data2)
-# select(data2, everything())
-# filter(data2, Count == 12)
-filter(data2, participant_id == "IP005")
-data3 <- select(data2, participant_id, max.temp)
-data3
-filter(data3, participant_id  == "IP005")
-filter(data3, participant_id  == "IP168")
-filter(data3, participant_id  == "IP183")
-data3
-data3[data3$participant_id == "IP005", "max.temp"] <- 50
-data3[data3$participant_id == "IP168", "max.temp"] <- 50
-data3[data3$participant_id == "IP183", "max.temp"] <- 48
 
-```
-
-## EDIT DATA v2
+## EDIT DATA (valid as of April 12, 2019)
 ```{r}
 #	CORRECTING AN ERROR IN THE MAX TEMP OF THREE SUBJECTS
 #	CHANGING THE max.temp VALUE
 data2[data2$participant_id == "IP005", "max.temp"] <- 50
 data2[data2$participant_id == "IP168", "max.temp"] <- 50
 data2[data2$participant_id == "IP183", "max.temp"] <- 48
+data2[data2$asq_15a  == "#DIV/0!", "asq_15a"] <- "NA"
 
 #	CREATING TEMPORARY DATA SUBSET
-tmp <- select(data2, participant_id, max.temp)
+tmp <- select(data2, participant_id, max.temp, asq_15a)
 #	CHECKING THAT THE CHANGE WAS MADE CORRECTLY
 filter(tmp, participant_id  == "IP005")
 filter(tmp, participant_id  == "IP168")
 filter(tmp, participant_id  == "IP183")
+
+tmp <- select(data2, participant_id, contains("asq"))
+
+tmp2 <- as_tibble(select(data2, participant_id, contains("asq_15")))
+
+tmp3 <- as_tibble(select(data2, contains("asq_15")))
+tmp3
+tmp4 <- mutate_if(tmp3, is.factor, as.numeric(as.character(tmp3,"asq_15a")))
+
+tmp5
+
+tmp[tmp$starts_with("asq") == "#DIV/0!", starts_with("asq")] <- "NA"
+
+
+filter(tmp, asq_15a == "#DIV/0!") <- "NA" 
 
 #	REMOVING THE TEMPORARY DATA SET
 rm(tmp)
 
 #	SAVING THE NEW DATA SET
 save(data2, file = "ASQ_pilot.RData")
+#	CLEAR data2 FROM THE ENVIRONMENT
 rm(data2)
-#	LOADING THE NEW DATA SET
+#	LOAD  THE NEW DATA SET
 load(file = "ASQ_pilot.RData")
 ```
 
@@ -111,15 +114,15 @@ asq_sm <- select(data2,
 				 starts_with("typical"),
 				 max.temp
 				 )
-# View(asq_sm)
+View(asq_sm)
 
-#	COMPUTE ASQ-L VALUES
-mutate(asq_sm, asq_l = mean(asq_1a + asq_2a)
+#	COMPUTE MEAN ASQ VALUES
+mutate(asq_sm, asq_l = mean(asq_14a + asq_15a)	  
 	   )
 #	ADD THE NEW VARIABLE TO THE SMALLER DATA SET
-asq_sm <-  mutate(asq_sm, asq_l = mean(asq_1a + asq_2a)
+asq_sm <-  mutate(asq_sm, asq_l = mean(asq_14a  asq_15a)
 	   )
-
+aver
 ```
 
 
@@ -528,3 +531,22 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+## EDIT DATA v1 - not using this code as of April 10, 2019
+```{r}
+# edit(data2)
+# select(data2, everything())
+# filter(data2, Count == 12)
+filter(data2, participant_id == "IP005")
+data3 <- select(data2, participant_id, max.temp)
+data3
+filter(data3, participant_id  == "IP005")
+filter(data3, participant_id  == "IP168")
+filter(data3, participant_id  == "IP183")
+data3
+data3[data3$participant_id == "IP005", "max.temp"] <- 50
+data3[data3$participant_id == "IP168", "max.temp"] <- 50
+data3[data3$participant_id == "IP183", "max.temp"] <- 48
+
+```
