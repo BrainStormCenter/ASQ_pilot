@@ -1,10 +1,8 @@
 ---
 title: "ASQ_pilot"
 author: "Jason"
-date: "4/4/2019"
-modified: "09/04/2019"
-modified: "10/04/2019"
-modified: "12/04/2019"
+created: "4/4/2019"
+modified: "13/04/2019"
 output: html_document
 ---
 ## R Markdown setup
@@ -16,18 +14,22 @@ These are ASQ pilot analyses are for the alcohol grant.
 
 To begin, one has to have an idea of what packages R will need to load to accomplish your goals. The packages below are the ones I will need to analyze the ASQ pilot data.
 
+##	LIBRARIES
 ```{r}
 library(readxl) # This is used to import data from excel
 library(tidyverse)
 library(purrr)
 library(ggplot2)
+library(modelr)
+	options(na.action = na.exclude)
+library(here)
+here() # THIS SETS THE WORKING DIRECTORY TO THE LOCATION OF THIS FILE
+dr_here(show_reason = FALSE)
+
+#	OTHER POTENTIAL PACKAGES
 #library(ez)
 #library(Hmisc)
 #library(reshape2)
-
-library(here)
-here() # THIS SETS THE WORKING DIRECTORY TO THE LOCATION OF THIS FILE
-dr_here(show_reason = TRUE)
 
 ```
 
@@ -61,7 +63,7 @@ levels(dataFactors$painduration)
 ## SORT DATA BY A VARIABLE
 ```{R}
 #	BOTH COMMANDS SORT THE DATA AND PRODUCE THE SAME RESULT
-arrange(data2, Count)
+data2 <- arrange(data2, Count)
 #	arrange(data2, participant_id)
 ```
 
@@ -137,6 +139,100 @@ data3 <-
 
 ```
 
+
+##	EXPLORATORY DATA ANALYSES
+```{R Groups}
+#	LOOKING AT THE 3 GROUPS
+#	filter out subject who doesn’t belong to any group
+data4 <- filter(data3, Groups3 != "NA")
+
+
+#	CREATING TEMPORARY DATA SUBSET
+tmp <- select(data3, participant_id, Groups3)
+
+#	CHECKING THAT THE CHANGE WAS MADE CORRECTLY
+filter(tmp, Groups3  == "NA")
+
+
+ggplot(data = data4) +
+	geom_bar(mapping = aes(x = Groups3))
+
+data3 %>% 
+	count(Groups3)
+
+```
+
+
+```{r ASQ-Light}
+ggplot(data = data3) +
+	geom_histogram(mapping = aes(x = asq_light))
+
+ggplot(data = data3, mapping = aes(x = asq_light, color = Groups3)) +
+	geom_freqpoly(binwidth = 0.1)
+
+
+data4 <- filter(data3, Groups3 != "NA")
+
+ggplot(data = data4, mapping = aes(x = asq_light, y = ..density..)) +
+	geom_freqpoly(mapping = aes(color = Groups3), binwidth = 0.1)
+
+
+
+# ggplot(data = data3, mapping = aes(x = asq_heavy, color = Groups3)) +
+# 	geom_freqpoly(binwidth = 0.1)
+
+
+
+smaller <- data3 %>% 
+	filter(Groups3 == "HC")
+ggplot(data = smaller, mapping = aes(x = asq_light)) +
+	geom_histogram(binwidth = 0.1)
+# ggplot(data = smaller, mapping = aes(x = asq_heavy)) +
+	# geom_histogram(binwidth = 0.1)
+
+
+data3 %>% 
+	count(cut_width(asq_light, 0.5))
+
+```
+##	ANOVA ASQ-LIGHT BY 3 GROUPS
+```{r ASQ-Light}
+myModel <- aov(asq_light ~ Groups3, data = data3)
+myModel
+
+anova(myModel)
+
+pairwise.t.test(data3$asq_light, data3$Groups3, na.rm=TRUE)
+#Anova(myModel, type = "III")
+TukeyHSD(myModel, "Groups3", na.rm = TRUE)
+
+asq_plot1 <- ggplot(data3, aes(asq_heavy, asq_light)) +
+	geom_point()
+
+asq_plot2 <- ggplot(data3, aes(asq_light, asq_heavy)) +
+	geom_point()
+
+asq_plot1
+asq_plot2
+
+plot(asq_plot1)
+plot(myModel)
+plot(TukeyHSD(myModel, "Groups3", rm.na = TRUE) )
+```
+
+
+##	ANOVA MAX-TEMP BY 3 GROUPS
+```{r}
+myModel2 <- aov(max.temp ~ Groups3, data = data3)
+myModel2
+
+anova(myModel2)
+pairwise.t.test(data3$max.temp, data3$Groups3)
+plot(myModel2)
+TukeyHSD(myModel2, "Groups3", rm.na = TRUE)
+plot(TukeyHSD(myModel2, "Groups3", rm.na = TRUE) )
+
+```
 
 
 #####	STOP HERE AS OF April 13, 2019, 12:18 AM
