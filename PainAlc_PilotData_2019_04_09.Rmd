@@ -17,10 +17,12 @@ To begin, one has to have an idea of what packages R will need to load to accomp
 ##	LIBRARIES
 ```{r}
 library(readxl) # This is used to import data from excel
+library(readr)	# Some additional options for reading csv data
 library(tidyverse)
 library(purrr)
 library(ggplot2)
 library(modelr)
+library(janitor)	# This will be used to exclude empty columns
 	options(na.action = na.exclude)
 library(here)
 here() # THIS SETS THE WORKING DIRECTORY TO THE LOCATION OF THIS FILE
@@ -48,10 +50,17 @@ data_ORIG <- read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
 data2 <- read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
 data2 <- as_tibble(data2)
 
+
 #	RAW DATA ON GITHUB
 #data3 <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/ASQ_pilot/master/ASQ_pilot_2019_04_09.csv'), header = TRUE)
 
-#View(data2)
+
+
+
+data12 <- read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE, na = "NA")
+#		Removes all rows and/or columns from a data.frame that are composed entirely of NA values.
+data12 <- remove_empty(data12, "cols")
+
 ```
 
 ## CHECK THAT THE DATA ARE OF THE CORRECT FORMAT/TYPE
@@ -68,7 +77,10 @@ data2 <- arrange(data2, Count)
 #	arrange(data2, participant_id)
 ```
 
+```{r}
+library(readr)
 
+```
 ## EDIT DATA (valid as of April 12, 2019)
 ```{r}
 #	CORRECTING AN ERROR IN THE MAX TEMP OF THREE SUBJECTS
@@ -169,6 +181,8 @@ data4 %>%
 
 ```{r ASQ-Light}
 #	EXPLORING THE COMPUTER ASQ-LIGHT DATA
+#	THE ANALYSES ARE BASED ON CHAPTER 7 OF R4DS
+#	https://r4ds.had.co.nz/exploratory-data-analysis.html
 ggplot(data = data4) +
 	geom_histogram(mapping = aes(x = asq_light))
 
@@ -188,27 +202,103 @@ ggplot(data = data4, mapping = aes(x = asq_light, y = ..density..)) +
 	geom_freqpoly(mapping = aes(color = Groups3), binwidth = 0.1)
 
 
-
 # ggplot(data = data3, mapping = aes(x = asq_heavy, color = Groups3)) +
 # 	geom_freqpoly(binwidth = 0.1)
 
+```
 
 
-smaller <- data3 %>% 
+
+```{r Smaller data sets}
+
+HC <- data4 %>% 
 	filter(Groups3 == "HC")
-ggplot(data = smaller, mapping = aes(x = asq_light)) +
+FM <- data4 %>% 
+	filter(Groups3 == "FM")
+CLBP <- data4 %>% 
+	filter(Groups3 == "CLBP")
+
+
+
+ggplot(data = HC, mapping = aes(x = asq_light)) +
 	geom_histogram(binwidth = 0.1)
-# ggplot(data = smaller, mapping = aes(x = asq_heavy)) +
+
+
+ggplot(data = HC, mapping = aes(x = asq_light)) +
+	geom_histogram(binwidth = 0.01) +
+	#coord_cartesian(ylim = c(0, 50))
+	labs(title="HC")
+
+ggplot(data = FM, mapping = aes(x = asq_light)) +
+	geom_histogram(binwidth = 0.01) +
+#	coord_cartesian(ylim = c(0, 50) +
+	labs(title="FM")
+
+ggplot(data = CLBP, mapping = aes(x = asq_light)) +
+	geom_histogram(binwidth = 0.01) +
+	#coord_cartesian(ylim = c(0, 50))
+	labs(title="CLBP")
+
+
+
+ggplot(data = HC, mapping = aes(asq_heavy, asq_light)) +
+	geom_point() +
+	labs(title="HC")
+
+ggplot(data = FM, mapping = aes(asq_heavy, asq_light)) +
+	geom_point() +
+labs(title="FM")
+
+ggplot(data = CLBP, mapping = aes(asq_heavy, asq_light)) +
+	geom_point() +
+	labs(title="CLBP")
+
+ggplot(data = data4, mapping = aes(asq_heavy, asq_light)) +
+	geom_point() +
+	labs(title="ALL")
+
+
+
+# ggplot(data = HC, mapping = aes(x = asq_heavy)) +
 	# geom_histogram(binwidth = 0.1)
 
+#data4 %>% 
+#	count(cut_width(asq_light, 0.5))
 
-data3 %>% 
-	count(cut_width(asq_light, 0.5))
+
+
+
+ggplot(data = data4, mapping = aes(x = Groups3, y = asq_light)) +
+	geom_boxplot()
+
+
+ggplot(data = data4) +
+	geom_point(mapping = aes(x = asq_heavy, y = asq_light)) +
+	geom_point() +
+	geom_smooth(se = FALSE)
+
+data4 %>% 
+	ggplot(mapping = aes(x = asq_heavy, y = asq_light)) +
+		   	geom_point() +
+		   	geom_smooth(se = FALSE)
+
+
+
+#data4 %>% 
+
+cor.test(data4$asq_light, data4$max.temp, meathod = "spearm", na.rm = TRUE)
+
+
+data4 %>% cor(x = data4$asq_light, y = data4$asq_heavy)
+
 
 ```
+
+
+
 ##	ANOVA ASQ-LIGHT BY 3 GROUPS
 ```{r ASQ-Light}
-myModel <- aov(asq_light ~ Groups3, data = data3)
+myModel <- aov(asq_light ~ Groups3, data = data4)
 myModel
 
 anova(myModel)
