@@ -23,6 +23,7 @@ library(purrr)
 library(ggplot2)
 library(modelr)
 library(janitor)	# This will be used to exclude empty columns
+library(corrplot)
 	options(na.action = na.exclude)
 library(here)
 here() # THIS SETS THE WORKING DIRECTORY TO THE LOCATION OF THIS FILE
@@ -30,7 +31,7 @@ dr_here(show_reason = FALSE)
 
 #	OTHER POTENTIAL PACKAGES
 #library(ez)
-#library(Hmisc)
+library(Hmisc)
 #library(reshape2)
 
 ```
@@ -53,7 +54,6 @@ data2 <- as_tibble(data2)
 
 #	RAW DATA ON GITHUB
 #data3 <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/ASQ_pilot/master/ASQ_pilot_2019_04_09.csv'), header = TRUE)
-
 
 
 
@@ -207,7 +207,45 @@ ggplot(data = data4, mapping = aes(x = asq_light, y = ..density..)) +
 
 ```
 
+```{r Correlations}
+vars_keep <- select(data4, asq_light, asq_heavy,max.temp)
 
+cor(vars_keep[,c("asq_light", "asq_heavy", "max.temp")])
+
+cor(vars_keep, use = "complete.obs", method = "pearson")
+
+
+M <- cor(vars_keep, use = "complete.obs")
+rcorr(as.matrix(vars_keep))
+corrplot(M, method = "number")
+
+HCsm <- select(HC, asq_light, asq_heavy,max.temp)
+FMsm <- select(FM, asq_light, asq_heavy,max.temp)
+CLBPsm <- select(CLBP, asq_light, asq_heavy,max.temp)
+
+
+HCcor <- cor(HCsm, use = "complete.obs")
+FMcor <- cor(FMsm, use = "complete.obs")
+CLBPcor <- cor(CLBPsm, use = "complete.obs")
+
+corrplot(HCcor, method = "number")
+corrplot(FMcor, method = "number")
+corrplot(CLBPcor, method = "number")
+
+#	filter(tmp, participant_id  == "IP168")
+
+#rcorr(vars_keep, type = "pearson")
+
+cor
+all[[1]] [1:3, 1:3]
+
+some <- data4 %>% 
+	split(data4$Groups3) %>% 
+	map(select, vars_keep) %>% 
+	map(cor) some[[1]]
+#list(num = 1:3)
+#map
+```
 
 ```{r Smaller data sets}
 
