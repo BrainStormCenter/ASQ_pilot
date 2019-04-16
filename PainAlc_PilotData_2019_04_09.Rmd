@@ -36,7 +36,8 @@ dr_here(show_reason = FALSE)
 ## SET THE WORKING DIRECTORY
 ```{r}
 # where files are:
-setwd("/Users/jcraggs/Documents/git/Rstudio/ASQ_pilot/")
+#setwd("/Users/jcraggs/Documents/git/Rstudio/ASQ_pilot/")
+setwd("/Users/jcraggs/Library/Mobile Documents/com~apple~CloudDocs/Documents/git/Rstudio/ASQ_pilot/")
 ```
 
 ## IMPORT DATA FOR THE PILOT ANALYSES
