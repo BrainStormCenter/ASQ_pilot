@@ -43,8 +43,8 @@ setwd("/Users/jcraggs/Documents/git/Rstudio/ASQ_pilot/")
 ```{r}
 #Read Data
 # Data exported from RedCap on April 4, 2019
-data_ORIG=read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
-data2=read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
+data_ORIG <- read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
+data2 <- read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
 data2 <- as_tibble(data2)
 
 #	RAW DATA ON GITHUB
@@ -76,6 +76,7 @@ data2[data2$participant_id == "IP005", "max.temp"] <- 50
 data2[data2$participant_id == "IP168", "max.temp"] <- 50
 data2[data2$participant_id == "IP183", "max.temp"] <- 48
 
+
 #	CREATING TEMPORARY DATA SUBSET
 tmp <- select(data2, participant_id, max.temp)
 
@@ -83,22 +84,25 @@ tmp <- select(data2, participant_id, max.temp)
 filter(tmp, participant_id  == "IP005")
 filter(tmp, participant_id  == "IP168")
 filter(tmp, participant_id  == "IP183")
+filter(tmp, participant_id  == "IP143")
 
 #	REMOVING THE TEMPORARY DATA SET
 rm(tmp)
 
 #	SAVING THE NEW DATA SET
 save(data2, dataFactors, file = "ASQ_pilot.RData")
-#	CLEAR data2 FROM THE ENVIRONMENT
+#	CLEAR data2 & dataFactors FROM THE ENVIRONMENT
 rm(data2, dataFactors)
 #	LOAD  THE NEW DATA SET
 load(file = "ASQ_pilot.RData")
 ```
 
 
-##	COMPUTE ASQ-LIGHT
-```{r}
-# data2 %>% 
+##	NEW VARIABLES
+```{r ASQ_Light}
+#	CREATING THE ASQ-LIGHT VARIABLE 
+#	I NEED TO ASK WHETHER THE MISSING VALUES SHOULD BE CONVERTED TO '0'
+#		FOR SUBJECTS WHO COMPLETED THE QUESTIONNAIRE BUT DIDN’T ENDORSE USE
 data3 <- 
 	mutate(data2,
 		x = pmap_dbl(list(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
@@ -118,8 +122,10 @@ data3 <-
 
 ```
 
-##	COMPUTE ASQ-HEAVY
-```{r}
+```{r ASQ_Heavy}
+#	CREATING THE ASQ-HEAVY VARIABLE 
+#	I NEED TO ASK WHETHER THE MISSING VALUES SHOULD BE CONVERTED TO '0'
+#		FOR SUBJECTS WHO COMPLETED THE QUESTIONNAIRE BUT DIDN’T ENDORSE USE
 data3 <- 
 	mutate(data3,
 		x = pmap_dbl(list(asq_10a, asq_11a, asq_12a, asq_13a, asq_14a,
@@ -141,37 +147,41 @@ data3 <-
 
 
 ##	EXPLORATORY DATA ANALYSES
-```{R Groups}
+```{r Subject filter}
 #	LOOKING AT THE 3 GROUPS
-#	filter out subject who doesn’t belong to any group
-data4 <- filter(data3, Groups3 != "NA")
+#	FILTER OUT SUBJECT WHERE Groups3=other
+#	LOOK FOR A WAY TO AVOID LOSING THIS SUBJECT ENTIRELY
+data4 <- filter(data3, Groups3 != "other")
 
+```
 
-#	CREATING TEMPORARY DATA SUBSET
-tmp <- select(data3, participant_id, Groups3)
-
-#	CHECKING THAT THE CHANGE WAS MADE CORRECTLY
-filter(tmp, Groups3  == "NA")
-
-
+```{R Groups}
+#	EXPLORING THE DATA OF THE 3 GROUPS
 ggplot(data = data4) +
 	geom_bar(mapping = aes(x = Groups3))
 
-data3 %>% 
+data4 %>% 
 	count(Groups3)
 
 ```
 
 
 ```{r ASQ-Light}
-ggplot(data = data3) +
+#	EXPLORING THE COMPUTER ASQ-LIGHT DATA
+ggplot(data = data4) +
 	geom_histogram(mapping = aes(x = asq_light))
 
 ggplot(data = data3, mapping = aes(x = asq_light, color = Groups3)) +
 	geom_freqpoly(binwidth = 0.1)
 
-
-data4 <- filter(data3, Groups3 != "NA")
+#	MEANS AND SDs ACROSS THE GROUPS
+data4 %>% 
+	group_by(Groups3) %>% 
+		summarize(
+			avg_temp = mean(max.temp, na.rm = TRUE),
+			avg_asql = mean(asq_light, na.rm = TRUE),
+			asq_sd = sd(asq_light, na.rm = TRUE)
+		)
 
 ggplot(data = data4, mapping = aes(x = asq_light, y = ..density..)) +
 	geom_freqpoly(mapping = aes(color = Groups3), binwidth = 0.1)
@@ -661,7 +671,7 @@ levels(data$mood_and_pain_v4_complete.factor)=c("Incomplete","Unverified","Compl
 ```
 
 ```{r}
-COMPUTE male=(sex="1").
+#COMPUTE male=(sex="1").
 
 #mynames <- names(data)
 #data2 <- vars_select(data, starts_with("asq_"))
