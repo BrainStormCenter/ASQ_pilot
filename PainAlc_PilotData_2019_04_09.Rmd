@@ -28,6 +28,7 @@ library(modelr)
 library(janitor)	# This will be used to exclude empty columns
 library(corrplot)
 	options(na.action = na.exclude)
+	library(PerformanceAnalytics)
 library(here)
 here() # THIS SETS THE WORKING DIRECTORY TO THE LOCATION OF THIS FILE
 dr_here(show_reason = FALSE)
@@ -187,7 +188,7 @@ CLBPsm <- select(CLBP, asq_light, asq_heavy,max.temp)
 	https://r4ds.had.co.nz/exploratory-data-analysis.html
 
 # 	--> 3 GROUPS <--
-```{R ASQ descriptives}
+```{R --> ASQ descriptives}
 #	EXPLORING THE DATA OF THE 3 GROUPS
 ggplot(data = data4) +
 	geom_bar(mapping = aes(x = Groups3))
@@ -234,7 +235,7 @@ ggplot(data = data4) +
 
 
 
-```{r ASQ Correlations}
+```{r --> ASQ Correlations}
 #	LEARNING HOW TO CALCULATE CORRELATIONS
 #	CREATING A SMALLER DATASET OF ALL SUBJECTS
 vars_keep <- select(data4, asq_light, asq_heavy,max.temp)
@@ -243,6 +244,8 @@ vars_keep <- select(data4, asq_light, asq_heavy,max.temp)
 #	Calculating correlations
 "pearson" # pearson
 cor(vars_keep, use = "complete.obs", method = "pearson")
+cor(vars_keep, use = "na.or.complete", method = "spearman")
+cor(vars_keep, use = "pairwise.complete", method = "spearman")
 "spearman" # spearman 
 cor(vars_keep, use = "complete.obs", method = "spearman")
 
@@ -253,8 +256,6 @@ Mp <- cor(vars_keep, use = "complete.obs", method = "pearson")
 rcorr(vars_keep$asq_light, vars_keep$asq_heavy, type=c("pearson"))
 rcorr(vars_keep$asq_light, vars_keep$asq_heavy, type=c("spearman"))
 
-
-
 #	This will test the correlations 
 #	However, there is no distinction between the correlation types
 #	You get the same answer for all three below
@@ -263,58 +264,46 @@ rcorr(as.matrix(vars_keep, method = "pearson"))
 rcorr(as.matrix(vars_keep, method = "spearman"))
 rcorr(as.matrix(vars_keep, type=c("spearman")))
 
-
+#	Plotting correlations
 corrplot(Mp, method = "number", title = "pearson", is.corr = FALSE, sig.level = 0.05,insig = c("pch", "p-value", "blank", "n", "label_sig"))
 corrplot(Mp, method = "number", title = "pearson", is.corr = TRUE, sig.level = 0.05,insig = c("pch", "p-value", "blank", "n", "label_sig"))
 
+#	These look the same
 corrplot(Mp, method = "number", title = "pearson", is.corr = TRUE)
-corrplot(Ms, method = "number", title = "spearman", type = "lower")
-
-
-
-
-FMcor <- cor(FMsm, use = "complete.obs")
-CLBPcor <- cor(CLBPsm, use = "complete.obs")
-
-corrplot(HCcor, method = "number")
-corrplot(FMcor, method = "number")
-corrplot(CLBPcor, method = "number")
-
-#	filter(tmp, participant_id  == "IP168")
-
-#rcorr(vars_keep, type = "pearson")
-
-#		FROM MEREDITH
-#### Redo correlations separately for ASQ subscales ####
-HCcor.ASQsubscale <- ezCor(
-  data = HCsm[,c(1:3)]
-  , r_size_lims = c(4,4)
-  , label_size = 3
-)
+corrplot(Mp, method = "number", title = "spearman", is.corr = TRUE)
 
 corrplot(Ms, method = "number", title = "spearman", type = "lower")
-corrplot(Ms, method = "number", title = "spearman", type = "lower",
-		 addCoef.col = "grey")
+corrplot(Ms, method = "number", title = "spearman", 
+		 addCoef.col = "green")
 
-
-
-corrplot(Ms,order = "AOE", addCoef.col  = "magenta",
+corrplot(Ms,order = "AOE", addCoef.col  = "brown",
 		 sig.level = 0.05,
 		 insig = "label_sig",
 		 #insig = c("pch", "p-value"),
 		 type = "upper", tl.pos = "d"
 		 ) 
 
-print(HCcor)
-#insig = c("pch", "p-value", "blank", "n", "label_sig"),
-		 
-#,
-         # diag = FALSE, tl.pos = "n", cl.pos = "n")
+cor.mtest(vars_keep)
 
-cor.mtest(HCsm)
+cor.test(vars_keep$asq_light,vars_keep$asq_heavy, method = "spearman")
+cor.test(vars_keep$asq_light,vars_keep$asq_heavy, method = "pearson")
 
 cor.test(HCsm$asq_light,HCsm$asq_heavy, method = "spearman")
 cor.test(HCsm$asq_light,HCsm$asq_heavy, method = "pearson")
+
+library(PerformanceAnalytics)
+cor.mtest(vars_keep)
+cor(vars_keep, use = "complete.obs", method = "spearman")
+cor(vars_keep, use = "complete.obs", method = "pearson")
+cor(vars_keep, use = "pairwise.complete", method = "spearman")
+chart.Correlation(vars_keep, histogram = TRUE,
+				  use = "pairwise.complete",
+				  method = 'pearson',
+				  na.rm = TRUE)
+chart.Correlation(vars_keep, histogram = TRUE,
+				  method = 'spearman',
+				  na.rm = TRUE)
+chart.Correlation(vars_keep, histogram = TRUE, method = "spearman", pch="+")
 
 ```
 
@@ -324,12 +313,20 @@ HCcor <- cor(HCsm, use = "complete.obs")
 HCcorPear <- cor(HCsm, use = "complete.obs", method = c("pearson"))
 HCcorSpear <- cor(HCsm, use = "complete.obs", method = c("spearman"))
 
-
+print(HCcor)
 #	Meredith's correlation method
 HCcor1.ASQsubscale <- ezCor(
   data = HCsm[,c(1:3)],
   r_size_lims = c(4,4),
   label_size = 3
+)
+
+#		FROM MEREDITH
+#### Redo correlations separately for ASQ subscales ####
+HCcor.ASQsubscale <- ezCor(
+  data = HCsm[,c(1:3)]
+  , r_size_lims = c(4,4)
+  , label_size = 3
 )
 
 HCcor2.ASQsubscale <- ezCor(
@@ -340,6 +337,7 @@ HCcor2.ASQsubscale <- ezCor(
 
 
 
+corrplot(HCcor, method = "number")
 
 
 
@@ -373,10 +371,22 @@ print(HCcor3.ASQsubscale <- ezCor(
   test_alpha = 0.055,
   label_size = 3
 ))
+
+
+
+cor.mtest(HCsm)
+
+cor.test(HCsm$asq_light,HCsm$asq_heavy, method = "spearman")
+cor.test(HCsm$asq_light,HCsm$asq_heavy, method = "pearson")
+
+
 ```
 
 
 ```{r Correlations FM}
+
+FMcor <- cor(FMsm, use = "complete.obs")
+
 FMcor.ASQsubscale <- ezCor(
   data = FMsm[,c(1:3)]
   , r_size_lims = c(4,4)
@@ -389,10 +399,14 @@ cor.test(FMsm$asq_light, FMsm$asq_heavy)
 cor.test(FMsm$asq_light, FMsm$max.temp)
 cor.test(FMsm$asq_heavy, FMsm$max.temp)
 
+corrplot(FMcor, method = "number")
 
 ```
 
 ```{r Correlations CLBP}
+
+CLBPcor <- cor(CLBPsm, use = "complete.obs")
+
 CLBPcor.ASQsubscale <- ezCor(
   data = CLBPsm[,c(1:3)]
   , r_size_lims = c(4,4)
@@ -417,6 +431,7 @@ cor.ASQsubscale <- ezCor(
   , label_size = 3
 )
 
+corrplot(CLBPcor, method = "number")
 
 # LightASQ and PILL: significant
 cor.test(CLBPsm$asq_light, CLBPsm$asq_heavy)
@@ -1105,6 +1120,13 @@ corrplot(Ms, order = "original", addCoef.col = "magenta", col = wb,
 corrplot(Ms, order = "original", col = wb)
 corrplot(Ms, order = "original", col = wb,
 		 outline = TRUE)
+
+
+
+#	filter(tmp, participant_id  == "IP168")
+
+#rcorr(vars_keep, type = "pearson")
+
 
 ```
 
