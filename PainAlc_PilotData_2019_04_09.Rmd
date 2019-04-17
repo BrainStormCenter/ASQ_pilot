@@ -2,12 +2,15 @@
 title: "ASQ_pilot"
 author: "Jason"
 created: "4/4/2019"
-modified: "13/04/2019"
+modified: "16/04/2019"
 output: html_document
 ---
 ## R Markdown setup
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+#	THE FOLLOWING WILL CAUSE KNIT TO EXIT
+# knitr::knit_exit()
 ```
 
 These are ASQ pilot analyses are for the alcohol grant.
@@ -34,13 +37,20 @@ dr_here(show_reason = FALSE)
 library(Hmisc)
 #library(reshape2)
 
+#		MEREDITH LIBRARIES
+### Recoding Calibration Data: 
+library(doBy)
+require(dplyr)
+library(ez)
+# Fix Sub ID Numbers:
+library(stringr)
 ```
 
 ## SET THE WORKING DIRECTORY
 ```{r}
 # where files are:
-#setwd("/Users/jcraggs/Documents/git/Rstudio/ASQ_pilot/")
-setwd("/Users/jcraggs/Library/Mobile Documents/com~apple~CloudDocs/Documents/git/Rstudio/ASQ_pilot/")
+setwd("/Users/jcraggs/Documents/git/Rstudio/ASQ_pilot/")
+# setwd("/Users/jcraggs/Library/Mobile Documents/com~apple~CloudDocs/Documents/git/Rstudio/ASQ_pilot/")
 ```
 
 ## IMPORT DATA FOR THE PILOT ANALYSES
@@ -51,16 +61,12 @@ data_ORIG <- read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
 data2 <- read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
 data2 <- as_tibble(data2)
 
-
 #	RAW DATA ON GITHUB
 #data3 <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/ASQ_pilot/master/ASQ_pilot_2019_04_09.csv'), header = TRUE)
 
-
-
-data12 <- read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE, na = "NA")
+#data12 <- read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE, na = "NA")
 #		Removes all rows and/or columns from a data.frame that are composed entirely of NA values.
-data12 <- remove_empty(data12, "cols")
-
+#data12 <- remove_empty(data12, "cols")
 ```
 
 ## CHECK THAT THE DATA ARE OF THE CORRECT FORMAT/TYPE
@@ -77,18 +83,13 @@ data2 <- arrange(data2, Count)
 #	arrange(data2, participant_id)
 ```
 
-```{r}
-library(readr)
-
-```
-## EDIT DATA (valid as of April 12, 2019)
+## EDIT DATA (valid as of April 16, 2019)
 ```{r}
 #	CORRECTING AN ERROR IN THE MAX TEMP OF THREE SUBJECTS
 #	CHANGING THE max.temp VALUE
 data2[data2$participant_id == "IP005", "max.temp"] <- 50
 data2[data2$participant_id == "IP168", "max.temp"] <- 50
 data2[data2$participant_id == "IP183", "max.temp"] <- 48
-
 
 #	CREATING TEMPORARY DATA SUBSET
 tmp <- select(data2, participant_id, max.temp)
@@ -110,8 +111,7 @@ rm(data2, dataFactors)
 load(file = "ASQ_pilot.RData")
 ```
 
-
-##	NEW VARIABLES
+# ADD ASQ VARIABLES
 ```{r ASQ_Light}
 #	CREATING THE ASQ-LIGHT VARIABLE 
 #	I NEED TO ASK WHETHER THE MISSING VALUES SHOULD BE CONVERTED TO '0'
@@ -132,7 +132,6 @@ data3 <-
 		})
 	) %>% 
 	rename(asq_light = x )
-
 ```
 
 ```{r ASQ_Heavy}
@@ -155,20 +154,40 @@ data3 <-
 		})
 	) %>% 
 	rename(asq_heavy = x)
-
 ```
 
 
-##	EXPLORATORY DATA ANALYSES
+
 ```{r Subject filter}
+#	THE ANALYSES ARE BASED ON CHAPTER 7 OF R4DS
+#	https://r4ds.had.co.nz/exploratory-data-analysis.html
+
 #	LOOKING AT THE 3 GROUPS
 #	FILTER OUT SUBJECT WHERE Groups3=other
 #	LOOK FOR A WAY TO AVOID LOSING THIS SUBJECT ENTIRELY
 data4 <- filter(data3, Groups3 != "other")
-
 ```
 
-```{R Groups}
+#	CREATING SMALLER DATASETS
+```{r Data by group}
+#	Create group specific data sets
+#	Small data sets for looking at correlations of 3 variables
+
+HC <- data4 %>% 
+	filter(Groups3 == "HC")
+FM <- data4 %>% 
+	filter(Groups3 == "FM")
+CLBP <- data4 %>% 
+	filter(Groups3 == "CLBP")
+
+HCsm <- select(HC, asq_light, asq_heavy,max.temp)
+FMsm <- select(FM, asq_light, asq_heavy,max.temp)
+CLBPsm <- select(CLBP, asq_light, asq_heavy,max.temp)
+```
+
+#	EXPLORATORY DATA ANALYSES
+# 	--> 3 GROUPS <--
+```{R 3-Groups}
 #	EXPLORING THE DATA OF THE 3 GROUPS
 ggplot(data = data4) +
 	geom_bar(mapping = aes(x = Groups3))
@@ -176,6 +195,14 @@ ggplot(data = data4) +
 data4 %>% 
 	count(Groups3)
 
+#	MEANS AND SDs ACROSS THE GROUPS
+data4 %>%
+	group_by(Groups3) %>% 
+		summarise(
+			avg_temp = mean(max.temp, na.rm = TRUE) #,
+			#avg_asql = mean(asq_light, na.rm = TRUE),
+			#asq_sd = sd(asq_light, na.rm = TRUE)
+		)
 ```
 
 
@@ -189,14 +216,7 @@ ggplot(data = data4) +
 ggplot(data = data3, mapping = aes(x = asq_light, color = Groups3)) +
 	geom_freqpoly(binwidth = 0.1)
 
-#	MEANS AND SDs ACROSS THE GROUPS
-data4 %>% 
-	group_by(Groups3) %>% 
-		summarize(
-			avg_temp = mean(max.temp, na.rm = TRUE),
-			avg_asql = mean(asq_light, na.rm = TRUE),
-			asq_sd = sd(asq_light, na.rm = TRUE)
-		)
+
 
 ggplot(data = data4, mapping = aes(x = asq_light, y = ..density..)) +
 	geom_freqpoly(mapping = aes(color = Groups3), binwidth = 0.1)
@@ -207,21 +227,23 @@ ggplot(data = data4, mapping = aes(x = asq_light, y = ..density..)) +
 
 ```
 
-```{r Correlations}
+
+
+
+```{r Correlations 3 groups}
+#	LEARNING HOW TO CALCULATE CORRELATIONS WITH A SMALLER DATASET
 vars_keep <- select(data4, asq_light, asq_heavy,max.temp)
 
-cor(vars_keep[,c("asq_light", "asq_heavy", "max.temp")])
-
+#	The results of this have NA in the off diagonal = Bad!
+#cor(vars_keep[,c("asq_light", "asq_heavy", "max.temp")])
+	
+#	This works correctly by does not have any p-values = ok not great 
 cor(vars_keep, use = "complete.obs", method = "pearson")
-
 
 M <- cor(vars_keep, use = "complete.obs")
 rcorr(as.matrix(vars_keep))
 corrplot(M, method = "number")
 
-HCsm <- select(HC, asq_light, asq_heavy,max.temp)
-FMsm <- select(FM, asq_light, asq_heavy,max.temp)
-CLBPsm <- select(CLBP, asq_light, asq_heavy,max.temp)
 
 
 HCcor <- cor(HCsm, use = "complete.obs")
@@ -236,16 +258,111 @@ corrplot(CLBPcor, method = "number")
 
 #rcorr(vars_keep, type = "pearson")
 
-cor
-all[[1]] [1:3, 1:3]
+#		FROM MEREDITH
+#### Redo correlations separately for ASQ subscales ####
+HCcor.ASQsubscale <- ezCor(
+  data = HCsm[,c(1:3)]
+  , r_size_lims = c(4,4)
+  , label_size = 3
+)
 
-some <- data4 %>% 
-	split(data4$Groups3) %>% 
-	map(select, vars_keep) %>% 
-	map(cor) some[[1]]
-#list(num = 1:3)
-#map
+
+cor.mtest(HCsm)
+
 ```
+
+```{r Correlations HC}
+HCcor <- cor(HCsm, use = "complete.obs")
+
+HCcor1.ASQsubscale <- ezCor(
+  data = HCsm[,c(1:3)],
+  r_size_lims = c(4,4),
+  label_size = 3
+)
+
+HCcor2.ASQsubscale <- ezCor(
+  data = HCsm[is.na(HCsm$asq_heavy)==FALSE,c(1:3)],
+  r_size_lims = c(4,4),
+  label_size = 3
+)
+
+
+
+
+
+
+
+print(HCcor1.ASQsubscale)
+print(HCcor2.ASQsubscale)
+
+cor.mtest(HCsm)
+
+cor.test(HCsm$asq_light, HCsm$asq_heavy)
+cor.test(HCsm$asq_light, HCsm$max.temp)
+cor.test(HCsm$asq_heavy, HCsm$max.temp)
+
+
+#	GRAPHS OF CORRELATIONS
+
+print(HCcor1.ASQsubscale)
+print(HCcor2.ASQsubscale)
+
+print(HCcor.ASQsubscale)
+corrplot(HCcor, method = "number")
+
+
+```
+
+
+```{r Correlations FM}
+FMcor.ASQsubscale <- ezCor(
+  data = FMsm[,c(1:3)]
+  , r_size_lims = c(4,4)
+  , label_size = 3
+)
+print(FMcor.ASQsubscale)
+cor.mtest(FMsm)
+
+cor.test(FMsm$asq_light, FMsm$asq_heavy)
+cor.test(FMsm$asq_light, FMsm$max.temp)
+cor.test(FMsm$asq_heavy, FMsm$max.temp)
+
+
+```
+
+```{r Correlations CLBP}
+CLBPcor.ASQsubscale <- ezCor(
+  data = CLBPsm[,c(1:3)]
+  , r_size_lims = c(4,4)
+  , label_size = 3
+)
+print(CLBPcor.ASQsubscale)
+cor.mtest(CLBPsm)
+
+
+
+
+CLBP2cor.ASQsubscale <- ezCor(
+  data = CLBPsm[is.na(CLBPsm$asq_heavy)==FALSE,c(1:3)]
+  , r_size_lims = c(4,4)
+  , label_size = 3
+)
+print(CLBP2cor.ASQsubscale)
+print(CLBPcor.ASQsubscale)
+cor.ASQsubscale <- ezCor(
+  data = dat.allpainvars[is.na(dat.allpainvars$HeavyASQ)==FALSE,c(8:11,13:16)]
+  , r_size_lims = c(4,4)
+  , label_size = 3
+)
+
+
+# LightASQ and PILL: significant
+cor.test(CLBPsm$asq_light, CLBPsm$asq_heavy)
+cor.test(CLBPsm$asq_light, CLBPsm$max.temp)
+cor.test(CLBPsm$asq_heavy, CLBPsm$max.temp)
+```
+
+
 
 ```{r Smaller data sets}
 
