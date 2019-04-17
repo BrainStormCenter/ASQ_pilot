@@ -159,9 +159,6 @@ data3 <-
 
 
 ```{r Subject filter}
-#	THE ANALYSES ARE BASED ON CHAPTER 7 OF R4DS
-#	https://r4ds.had.co.nz/exploratory-data-analysis.html
-
 #	LOOKING AT THE 3 GROUPS
 #	FILTER OUT SUBJECT WHERE Groups3=other
 #	LOOK FOR A WAY TO AVOID LOSING THIS SUBJECT ENTIRELY
@@ -185,9 +182,12 @@ FMsm <- select(FM, asq_light, asq_heavy,max.temp)
 CLBPsm <- select(CLBP, asq_light, asq_heavy,max.temp)
 ```
 
-#	EXPLORATORY DATA ANALYSES
+#	EXPLORATORY ANALYSES
+	THE ANALYSES BELOW ARE BASED ON CHAPTER 7 OF R4DS
+	https://r4ds.had.co.nz/exploratory-data-analysis.html
+
 # 	--> 3 GROUPS <--
-```{R 3-Groups}
+```{R ASQ descriptives}
 #	EXPLORING THE DATA OF THE 3 GROUPS
 ggplot(data = data4) +
 	geom_bar(mapping = aes(x = Groups3))
@@ -195,58 +195,84 @@ ggplot(data = data4) +
 data4 %>% 
 	count(Groups3)
 
-#	MEANS AND SDs ACROSS THE GROUPS
+#	ASQ MEANS AND SDs OVERALL
+data4 %>%
+	summarise(
+		avg_temp = mean(max.temp, na.rm = TRUE),
+		temp_sd = sd(max.temp, na.rm = TRUE),
+		avg_asql = mean(asq_light, na.rm = TRUE),
+		asql_sd = sd(asq_light, na.rm = TRUE),
+		avg_asqh = mean(asq_heavy, na.rm = TRUE),
+		asqh_sd = sd(asq_heavy, na.rm = TRUE)
+	)
+
+#	ASQ MEANS AND SDs OF THE GROUPS
 data4 %>%
 	group_by(Groups3) %>% 
 		summarise(
-			avg_temp = mean(max.temp, na.rm = TRUE) #,
-			#avg_asql = mean(asq_light, na.rm = TRUE),
-			#asq_sd = sd(asq_light, na.rm = TRUE)
+			avg_temp = mean(max.temp, na.rm = TRUE),
+			temp_sd = sd(max.temp, na.rm = TRUE),
+			avg_asql = mean(asq_light, na.rm = TRUE),
+			asql_sd = sd(asq_light, na.rm = TRUE),
+			avg_asqh = mean(asq_heavy, na.rm = TRUE),
+			asqh_sd = sd(asq_heavy, na.rm = TRUE)
 		)
-```
 
-
-```{r ASQ-Light}
-#	EXPLORING THE COMPUTER ASQ-LIGHT DATA
-#	THE ANALYSES ARE BASED ON CHAPTER 7 OF R4DS
-#	https://r4ds.had.co.nz/exploratory-data-analysis.html
+#	HISTOGRAMS OF ASQ SCORES
 ggplot(data = data4) +
 	geom_histogram(mapping = aes(x = asq_light))
 
-ggplot(data = data3, mapping = aes(x = asq_light, color = Groups3)) +
-	geom_freqpoly(binwidth = 0.1)
+ggplot(data = data4) +
+	geom_histogram(mapping = aes(x = asq_heavy))
 
+ggplot(data = data4) +
+	geom_histogram(mapping = aes(x = asq_light, color = Groups3)) 
 
-
-ggplot(data = data4, mapping = aes(x = asq_light, y = ..density..)) +
-	geom_freqpoly(mapping = aes(color = Groups3), binwidth = 0.1)
-
-
-# ggplot(data = data3, mapping = aes(x = asq_heavy, color = Groups3)) +
-# 	geom_freqpoly(binwidth = 0.1)
-
+ggplot(data = data4) +
+	geom_histogram(mapping = aes(x = asq_heavy, color = Groups3)) 
 ```
 
 
 
-
-```{r Correlations 3 groups}
-#	LEARNING HOW TO CALCULATE CORRELATIONS WITH A SMALLER DATASET
+```{r ASQ Correlations}
+#	LEARNING HOW TO CALCULATE CORRELATIONS
+#	CREATING A SMALLER DATASET OF ALL SUBJECTS
 vars_keep <- select(data4, asq_light, asq_heavy,max.temp)
 
-#	The results of this have NA in the off diagonal = Bad!
-#cor(vars_keep[,c("asq_light", "asq_heavy", "max.temp")])
-	
 #	This works correctly by does not have any p-values = ok not great 
+#	Calculating correlations
+"pearson" # pearson
 cor(vars_keep, use = "complete.obs", method = "pearson")
+"spearman" # spearman 
+cor(vars_keep, use = "complete.obs", method = "spearman")
 
-M <- cor(vars_keep, use = "complete.obs")
-rcorr(as.matrix(vars_keep))
-corrplot(M, method = "number")
+Ms <- cor(vars_keep, use = "complete.obs", method = "spearman")
+Mp <- cor(vars_keep, use = "complete.obs", method = "pearson")
+
+#	This will test correlation pairs
+rcorr(vars_keep$asq_light, vars_keep$asq_heavy, type=c("pearson"))
+rcorr(vars_keep$asq_light, vars_keep$asq_heavy, type=c("spearman"))
 
 
 
-HCcor <- cor(HCsm, use = "complete.obs")
+#	This will test the correlations 
+#	However, there is no distinction between the correlation types
+#	You get the same answer for all three below
+#	Because of "as.matrix"
+rcorr(as.matrix(vars_keep, method = "pearson"))
+rcorr(as.matrix(vars_keep, method = "spearman"))
+rcorr(as.matrix(vars_keep, type=c("spearman")))
+
+
+corrplot(Mp, method = "number", title = "pearson", is.corr = FALSE, sig.level = 0.05,insig = c("pch", "p-value", "blank", "n", "label_sig"))
+corrplot(Mp, method = "number", title = "pearson", is.corr = TRUE, sig.level = 0.05,insig = c("pch", "p-value", "blank", "n", "label_sig"))
+
+corrplot(Mp, method = "number", title = "pearson", is.corr = TRUE)
+corrplot(Ms, method = "number", title = "spearman", type = "lower")
+
+
+
+
 FMcor <- cor(FMsm, use = "complete.obs")
 CLBPcor <- cor(CLBPsm, use = "complete.obs")
 
@@ -266,14 +292,40 @@ HCcor.ASQsubscale <- ezCor(
   , label_size = 3
 )
 
+corrplot(Ms, method = "number", title = "spearman", type = "lower")
+corrplot(Ms, method = "number", title = "spearman", type = "lower",
+		 addCoef.col = "grey")
+
+
+
+corrplot(Ms,order = "AOE", addCoef.col  = "magenta",
+		 sig.level = 0.05,
+		 insig = "label_sig",
+		 #insig = c("pch", "p-value"),
+		 type = "upper", tl.pos = "d"
+		 ) 
+
+print(HCcor)
+#insig = c("pch", "p-value", "blank", "n", "label_sig"),
+		 
+#,
+         # diag = FALSE, tl.pos = "n", cl.pos = "n")
 
 cor.mtest(HCsm)
+
+cor.test(HCsm$asq_light,HCsm$asq_heavy, method = "spearman")
+cor.test(HCsm$asq_light,HCsm$asq_heavy, method = "pearson")
 
 ```
 
 ```{r Correlations HC}
+#	Calculating different correlation types
 HCcor <- cor(HCsm, use = "complete.obs")
+HCcorPear <- cor(HCsm, use = "complete.obs", method = c("pearson"))
+HCcorSpear <- cor(HCsm, use = "complete.obs", method = c("spearman"))
 
+
+#	Meredith's correlation method
 HCcor1.ASQsubscale <- ezCor(
   data = HCsm[,c(1:3)],
   r_size_lims = c(4,4),
@@ -285,6 +337,7 @@ HCcor2.ASQsubscale <- ezCor(
   r_size_lims = c(4,4),
   label_size = 3
 )
+
 
 
 
@@ -307,10 +360,19 @@ cor.test(HCsm$asq_heavy, HCsm$max.temp)
 print(HCcor1.ASQsubscale)
 print(HCcor2.ASQsubscale)
 
-print(HCcor.ASQsubscale)
+print(HCcor1.ASQsubscale)
 corrplot(HCcor, method = "number")
 
+corrplot(HCcor2.ASQsubscale, addCoef.col = "grey")
 
+print(HCcor3.ASQsubscale <- ezCor(
+  data = HCsm[is.na(HCsm$asq_heavy)==FALSE,c(1:3)],
+  r_size_lims = c(4,4),
+  density_colour = "magenta",
+  lm_colour = "red",
+  test_alpha = 0.055,
+  label_size = 3
+))
 ```
 
 
@@ -933,7 +995,7 @@ When you click the **Knit** button a document will be generated that includes bo
 summary(cars)
 ```
 
-## Including Plots
+# INCLUDING PLOTS
 
 You can also embed plots, for example:
 
@@ -1025,3 +1087,55 @@ names(asq_sm)[names(asq_sm)=="x"] <- "asq_h"
 # #	ADD THE NEW VARIABLE TO THE SMALLER DATA SET
 # asq_sm <-  mutate(asq_sm,asq_l = mean(asq_14a  asq_15a) )
 ```
+
+#	PRACTICE - JUNK
+```{r scrap}
+# correlations
+"kendall" #kendall
+cor(vars_keep, use = "complete.obs", method = "kendall")
+
+# corrplots
+corrplot(Ms, method = "number", col = "black")
+corrplot(Ms, method = "number", col = "black", cl.pos = "n")
+corrplot(Ms, order = "original")
+corrplot(Ms, order = "original", addCoef.col = "magenta")
+corrplot(Ms, order = "original", addCoef.col = "magenta", col = wb)
+corrplot(Ms, order = "original", addCoef.col = "magenta", col = wb,
+		 outline = TRUE)
+corrplot(Ms, order = "original", col = wb)
+corrplot(Ms, order = "original", col = wb,
+		 outline = TRUE)
+
+```
+
+
+
+
+<!--```{r ASQ-Light}
+#	EXPLORING THE COMPUTER ASQ-LIGHT DATA
+#	THE ANALYSES ARE BASED ON CHAPTER 7 OF R4DS
+#	https://r4ds.had.co.nz/exploratory-data-analysis.html
+
+ggplot(data = data4) +
+	geom_histogram(mapping = aes(x = asq_light))
+
+ggplot(data = data4) +
+	geom_histogram(mapping = aes(x = asq_heavy))
+
+ggplot(data = data4) +
+	geom_histogram(mapping = aes(x = asq_light, color = Groups3))
+
+ggplot(data = data4) +
+	geom_histogram(mapping = aes(x = asq_heavy, color = Groups3))
+
+#	THESE THREE GRAPHS DON'T PROVIDE VERY MUCH INFORMATION = MEH...
+#ggplot(data = data4, mapping = aes(x = asq_light, color = Groups3)) +
+	# geom_freqpoly(binwidth = 0.1)
+
+# ggplot(data = data4, mapping = aes(x = asq_light, y = ..density..)) +
+# 	geom_freqpoly(mapping = aes(color = Groups3), binwidth = 0.1)
+
+# ggplot(data = data4, mapping = aes(x = asq_heavy, color = Groups3)) +
+# 	geom_freqpoly(binwidth = 0.1)
+
+ ```-->
