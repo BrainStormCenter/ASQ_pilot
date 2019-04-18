@@ -105,6 +105,9 @@ filter(tmp, participant_id  == "IP143")
 #	REMOVING THE TEMPORARY DATA SET
 rm(tmp)
 
+#		WRITE CSV FILE
+# write.csv(data, "ASQ_pilot_raw_2019_04_17.csv", row.names = FALSE)
+
 #	SAVING THE NEW DATA SET
 save(data2, dataFactors, file = "ASQ_pilot.RData")
 #	CLEAR data2 & dataFactors FROM THE ENVIRONMENT
