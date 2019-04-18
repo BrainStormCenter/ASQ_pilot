@@ -27,8 +27,8 @@ library(ggplot2)
 library(modelr)
 library(janitor)	# This will be used to exclude empty columns
 library(corrplot)
-	options(na.action = na.exclude)
-	library(PerformanceAnalytics)
+options(na.action = na.exclude)
+library(PerformanceAnalytics)
 library(here)
 here() # THIS SETS THE WORKING DIRECTORY TO THE LOCATION OF THIS FILE
 dr_here(show_reason = FALSE)
@@ -93,7 +93,7 @@ data2[data2$participant_id == "IP168", "max.temp"] <- 50
 data2[data2$participant_id == "IP183", "max.temp"] <- 48
 
 #	CREATING TEMPORARY DATA SUBSET
-tmp <- select(data2, participant_id, max.temp)
+tmp <- select(data_ORIG2, participant_id, max.temp)
 
 #	CHECKING THAT THE CHANGE WAS MADE CORRECTLY
 filter(tmp, participant_id  == "IP005")
