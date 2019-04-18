@@ -21,30 +21,35 @@ To begin, one has to have an idea of what packages R will need to load to accomp
 ```{r}
 library(readxl) # This is used to import data from excel
 library(readr)	# Some additional options for reading csv data
-library(tidyverse)
+library(stringr)
+library(ez)
+library(Hmisc)
+library(doBy)
+library(psych)
 library(purrr)
 library(ggplot2)
 library(modelr)
 library(janitor)	# This will be used to exclude empty columns
 library(corrplot)
-options(na.action = na.exclude)
+#options(na.action = na.exclude)
 library(PerformanceAnalytics)
+library(tidyverse)
 library(here)
 here() # THIS SETS THE WORKING DIRECTORY TO THE LOCATION OF THIS FILE
 dr_here(show_reason = FALSE)
 
 #	OTHER POTENTIAL PACKAGES
 #library(ez)
-library(Hmisc)
+# library(Hmisc)
 #library(reshape2)
 
 #		MEREDITH LIBRARIES
 ### Recoding Calibration Data: 
-library(doBy)
-require(dplyr)
-library(ez)
+# library(doBy)
+# require(dplyr)
+
 # Fix Sub ID Numbers:
-library(stringr)
+# library(stringr)
 ```
 
 ## SET THE WORKING DIRECTORY
@@ -55,81 +60,55 @@ setwd("/Users/jcraggs/Documents/git/Rstudio/ASQ_pilot/")
 ```
 
 ## IMPORT DATA FOR THE PILOT ANALYSES
-```{r}
+```{r Read-write files}
 #Read Data
-# Data exported from RedCap on April 4, 2019
-data_ORIG <- read.csv("ASQ_pilot_2019_04_17.csv", header = TRUE)
-data2 <- read.csv("ASQ_pilot_2019_04_17.csv", header = TRUE)
+#		Data exported from RedCap on April 4, 2019
+data1 <- read_csv("ASQ_pain_pilot_2019_04_18.csv",
+				  col_names = TRUE, 
+				  col_types = NULL,
+				  quoted_na = FALSE)
+data2 <- as_tibble(data1)
+
+data21 <- read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
 data2 <- as_tibble(data2)
+#		RAW DATA ON GITHUB
+#data3 <- read_csv(url('https://raw.githubusercontent.com/BrainStormCenter/ASQ_pilot/master/ASQ_pain_pilot_2019_04_18.csv'), header = TRUE)
 
-#	RAW DATA ON GITHUB
-#data3 <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/ASQ_pilot/master/ASQ_pilot_2019_04_17.csv'), header = TRUE)
 
-#data12 <- read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE, na = "NA")
-#		Removes all rows and/or columns from a data.frame that are composed entirely of NA values.
-#data12 <- remove_empty(data12, "cols")
+#		UNCOMMENT TO WRITE A CSV FILE
+# write.csv(data2, "EXAMPLE.csv", row.names = FALSE)
+
+#		SAVE DATA SET AS AN .RData FILE
+# save(data2, dataFactors, file = "ASQ_pilot.RData")
+
+#		LOAD A DATA SET (.RData FILE)
+# load(file = "ASQ_pilot.RData")
+
 ```
 
-## CHECK THAT THE DATA ARE OF THE CORRECT FORMAT/TYPE
-```{r}
+
+# CHECK THAT THE DATA ARE OF THE CORRECT FORMAT/TYPE
+```{r Factor check}
 #	CHECK WHICH VARIABLES ARE CODED AS FACTORS AND THEIR LEVELS
-dataFactors <- select_if(data2, is.factor)
+dataFactors <- select_if(data21, is.factor)
 colnames(dataFactors)
 levels(dataFactors$painduration)
 ```
-## SORT DATA BY A VARIABLE
-```{R}
-#	BOTH COMMANDS SORT THE DATA AND PRODUCE THE SAME RESULT
-data2 <- arrange(data2, Count)
-#	arrange(data2, participant_id)
-```
 
-# EDIT DATA (valid as of April 16, 2019)
-	DO NOT NEEDED TO CHANGE MAX TEMP AS OF April 17, 2019
-```{r}
-#	CORRECTING AN ERROR IN THE MAX TEMP OF THREE SUBJECTS
-#	CHANGING THE max.temp VALUE
-data2[data2$participant_id == "IP005", "max.temp"] <- 50
-data2[data2$participant_id == "IP168", "max.temp"] <- 50
-data2[data2$participant_id == "IP183", "max.temp"] <- 48
-
-#	CREATING TEMPORARY DATA SUBSET
-tmp <- select(data2, participant_id, max.temp)
-
-#	CHECKING THAT THE CHANGE WAS MADE CORRECTLY
-filter(tmp, participant_id  == "IP005")
-filter(tmp, participant_id  == "IP168")
-filter(tmp, participant_id  == "IP183")
-filter(tmp, participant_id  == "IP143")
-
-#	REMOVING THE TEMPORARY DATA SET
-rm(tmp)
-
-#		WRITE CSV FILE
-# write.csv(data, "ASQ_pilot_raw_2019_04_17.csv", row.names = FALSE)
-
-#	SAVING THE NEW DATA SET
-save(data2, dataFactors, file = "ASQ_pilot.RData")
-#	CLEAR data2 & dataFactors FROM THE ENVIRONMENT
-rm(data2, dataFactors)
-#	LOAD  THE NEW DATA SET
-load(file = "ASQ_pilot.RData")
-```
-
-# ADD ASQ VARIABLES
+# ADD VARIABLES
 ```{r ASQ_Light}
 #	CREATING THE ASQ-LIGHT VARIABLE 
 #	I NEED TO ASK WHETHER THE MISSING VALUES SHOULD BE CONVERTED TO '0'
 #		FOR SUBJECTS WHO COMPLETED THE QUESTIONNAIRE BUT DIDN’T ENDORSE USE
-data3 <- 
-	mutate(data2,
+data2 <- 
+	mutate(data1,
 		x = pmap_dbl(list(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
 						  asq_6a, asq_7a, asq_8a, asq_9a), function(...){
 			row_values <- unlist(list(...))
 			number_of_NAs <- sum(is.na(row_values))
 			map_dbl(number_of_NAs, ~ case_when(
 				.x == 0 ~ mean(row_values),
-				.x >= 1 ~ mean(row_values, na.rm = TRUE) #,
+				.x >= 1 ~ mean(row_values), na.rm = TRUE) #,
 				# .x == 1 ~ mean(row_values, na.rm = TRUE),
 				# .x == 2 ~ mean(row_values, na.rm = TRUE),
 				# .x == 3 ~ mean(row_values, na.rm = TRUE)
@@ -165,9 +144,9 @@ data3 <-
 
 ```{r Subject filter}
 #	LOOKING AT THE 3 GROUPS
-#	FILTER OUT SUBJECT WHERE Groups3=other
+#	FILTER OUT SUBJECT WHERE Groups=other
 #	LOOK FOR A WAY TO AVOID LOSING THIS SUBJECT ENTIRELY
-data4 <- filter(data3, Groups3 != "other")
+data4 <- filter(data2, Groups != "other")
 ```
 
 #	CREATING SMALLER DATASETS
@@ -347,6 +326,31 @@ print(Gp3.cor1)
 
 
 ```
+
+
+```{r ---> REPLY TO POSTED QUESTION}
+#		TESTING A SOLUTION TO A QUESTION I POSTED
+
+library(dplyr)
+library(psych)
+
+complete_dataset <- read.csv(file = 'https://raw.githubusercontent.com/BrainStormCenter/ASQ_pilot/master/ASQ_pilot_raw_2019_04_17.csv')
+
+small_subset <- complete_dataset %>%
+  # as far as I can see, there's not a single participant with "other" as Group3
+  filter(Groups3 != "other") %>% 
+  select(asq_light, asq_heavy, max.temp)
+
+correlation_matrix <- corr.test(x = small_subset,
+                                use = "complete", # available: pairwise, complete
+                                method = "pearson", # available: pearson, spearman, kendall
+                                adjust = "none") # available: holm, hochberg, hommel, bonferroni, BH, BY, fd, none
+
+print(x = correlation_matrix,
+      short = FALSE)
+```
+
+
 
 
 ```{r Correlations HC}
@@ -1146,6 +1150,29 @@ names(asq_sm)[names(asq_sm)=="x"] <- "asq_h"
 ```
 
 #	PRACTICE - JUNK
+```{R Useful notes and commands}
+#		WRITE CSV FILE
+# write.csv(data2, "data1.csv", row.names = FALSE)
+
+#		Removes all rows and/or columns from a data.frame that are composed entirely of NA values.
+#data12 <- remove_empty(data12, "cols")
+
+#		SORT DATA
+#		BOTH COMMANDS SORT THE DATA AND PRODUCE THE SAME RESULT
+#		arrange(data2, participant_id)
+# data1 <- arrange(data1, Count)
+
+
+#	CREATING TEMPORARY DATA SUBSET
+# tmp <- select(data2, participant_id, max.temp)
+
+#		BLOCK COMMENTS
+# <!-- START OF BLOCK 
+# END OF BLOCK -->
+```
+
+
+
 ```{r scrap}
 # correlations
 "kendall" #kendall
@@ -1172,7 +1199,39 @@ corrplot(Ms, order = "original", col = wb,
 
 ```
 
+# EDIT DATA (valid as of April 16, 2019)
 
+	DO NOT NEEDED TO CHANGE MAX TEMP AS OF April 17, 2019
+<!-- ```{r}
+#	CORRECTING AN ERROR IN THE MAX TEMP OF THREE SUBJECTS
+#	CHANGING THE max.temp VALUE
+data2[data2$participant_id == "IP005", "max.temp"] <- 50
+data2[data2$participant_id == "IP168", "max.temp"] <- 50
+data2[data2$participant_id == "IP183", "max.temp"] <- 48
+
+
+
+#	CHECKING THAT THE CHANGE WAS MADE CORRECTLY
+filter(tmp, participant_id  == "IP008")
+filter(tmp, participant_id  == "IP168")
+filter(tmp, participant_id  == "IP183")
+filter(tmp, participant_id  == "IP143")
+
+#	REMOVING THE TEMPORARY DATA SET
+rm(tmp)
+
+#		WRITE CSV FILE
+# write.csv(data, "ASQ_pilot_raw_2019_04_17.csv", row.names = FALSE)
+
+#	SAVING THE NEW DATA SET
+save(data2, dataFactors, file = "ASQ_pilot.RData")
+#	CLEAR data2 & dataFactors FROM THE ENVIRONMENT
+rm(data2, dataFactors)
+#	LOAD  THE NEW DATA SET
+load(file = "ASQ_pilot.RData")
+``` -->
+
+test
 
 
 <!--```{r ASQ-Light}
