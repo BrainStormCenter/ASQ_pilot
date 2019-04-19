@@ -20,14 +20,14 @@ To begin, one has to have an idea of what packages R will need to load to accomp
 ##	LIBRARIES
 ```{r}
 # library(readxl) # This is used to import data from excel
-# library(readr)	# Some additional options for reading csv data
+# library(readr)	# INCLUDED IN TIDYVERSE  options for reading csv data
 # library(stringr)
 # library(ez)
 # library(Hmisc)
 # library(doBy)
 library(psych)
-# library(purrr)
-# library(ggplot2)
+# library(purrr) # 	NOT NEEDED, INCLUDED IN TIDYVERSE
+library(ggplot2)
 # library(modelr)
 # library(janitor)	# This will be used to exclude empty columns
 # library(corrplot)
@@ -53,9 +53,9 @@ dr_here(show_reason = FALSE)
 ```
 
 ## SET THE WORKING DIRECTORY
-```{r}
+```{r NOT RECOMMENDED BY JEN AND HADLEY}
 # where files are:
-setwd("/Users/jcraggs/Documents/git/Rstudio/ASQ_pilot/")
+#setwd("/Users/jcraggs/Documents/git/Rstudio/ASQ_pilot/")
 # setwd("/Users/jcraggs/Library/Mobile Documents/com~apple~CloudDocs/Documents/git/Rstudio/ASQ_pilot/")
 ```
 
@@ -63,14 +63,14 @@ setwd("/Users/jcraggs/Documents/git/Rstudio/ASQ_pilot/")
 ```{r Read-write files}
 #Read Data
 #		Data exported from RedCap on April 4, 2019
-# data0 <- read_csv("ASQ_pain_pilot_2019_04_18.csv",
-# 				  col_names = TRUE, 
-# 				  col_types = NULL,
-# 				  quoted_na = FALSE)
-# data1 <- as_tibble(data1)
+data0 <- read_csv("ASQ_pain_pilot_2019_04_19.csv",
+				  col_names = TRUE,
+				  col_types = NULL,
+				  quoted_na = FALSE)
+data1 <- as_tibble(data0)
 
-data1 <- read.csv("ASQ_pain_pilot_2019_04_18.csv", header = TRUE)
-data2 <- as_tibble(data1)
+# data1 <- read.csv("ASQ_pain_pilot_2019_04_18.csv", header = TRUE)
+# data2 <- as_tibble(data1)
 #		RAW DATA ON GITHUB
 #data3 <- read_csv(url('https://raw.githubusercontent.com/BrainStormCenter/ASQ_pilot/master/ASQ_pain_pilot_2019_04_18.csv'), header = TRUE)
 
@@ -96,40 +96,8 @@ levels(dataFactors$painduration)
 ```
 
 # ADD VARIABLES
-```{r ASQ_Light}
-#	CREATING THE ASQ-LIGHT VARIABLE 
-#	I NEED TO ASK WHETHER THE MISSING VALUES SHOULD BE CONVERTED TO '0'
-#		FOR SUBJECTS WHO COMPLETED THE QUESTIONNAIRE BUT DIDN’T ENDORSE USE
-data2.1 <- 
-	mutate(data2,
-		x = pmap_dbl(list(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
-						  asq_6a, asq_7a, asq_8a, asq_9a), function(...){
-			row_values <- unlist(list(...))
-			number_of_NAs <- sum(is.na(row_values))
-			map_dbl(number_of_NAs, ~ case_when(
-				.x == 0 ~ mean(row_values),
-				.x >= 1 ~ mean(row_values, na.rm = FALSE) #,
-				# .x == 1 ~ mean(row_values, na.rm = TRUE),
-				# .x == 2 ~ mean(row_values, na.rm = TRUE),
-				# .x == 3 ~ mean(row_values, na.rm = TRUE)
-			))
-		})
-	) %>% 
-	rename(asq_light = x )
-```
 
-```{r}
-data99 <- 
-	mutate(data2,
-		   x = pmap_dbl(list(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
-		   				  asq_6a, asq_7a, asq_8a, asq_9a), function(...){
-		   				  	row_values <- unlist(list(...))
-		   				  	number_of_NAs <- sum(is.na(row_values))
-		   				  }
-		   )
-	)
 
-```
 
 
 ```{r}
@@ -139,61 +107,42 @@ tmp <- select(data2.1, ID, asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
 
 ```
 
+#		CREATING NEW VARIABLE 
+```{r --> ASQ-L rowwise}
+#		THIS SEEMS TO WORK VERY WELL April 19, 2019
+data2 <- data1 %>%
+    mutate_at(vars(starts_with("asq_")), as.numeric) %>%
+    rowwise() %>% 
+    mutate(asq_light = mean(c(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
+                              asq_6a, asq_7a, asq_8a, asq_9a), na.rm = TRUE)) %>%
+    ungroup() # %>% 
+    # select(asq_light, starts_with("asq_")) %>%
+	# head(10)
 
-```{r ASQ_Light}
-#	CREATING THE ASQ-LIGHT VARIABLE 
-#	I NEED TO ASK WHETHER THE MISSING VALUES SHOULD BE CONVERTED TO '0'
-#		FOR SUBJECTS WHO COMPLETED THE QUESTIONNAIRE BUT DIDN’T ENDORSE USE
-data2.1 <- 
-	mutate(data2,
-		x = pmap_dbl(list(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
-						  asq_6a, asq_7a, asq_8a, asq_9a), function(...){
-			row_values <- unlist(list(...))
-			number_of_NAs <- sum(is.na(row_values))
-			map_dbl(number_of_NAs, ~ case_when(
-				.x == 0 ~ mean(row_values),
-				.x >= 1 ~ mean(row_values, na.rm = TRUE) #,
-				# .x == 1 ~ mean(row_values, na.rm = TRUE),
-				# .x == 2 ~ mean(row_values, na.rm = TRUE),
-				# .x == 3 ~ mean(row_values, na.rm = TRUE)
-			))
-		})
-	) %>% 
-	rename(asq_light = x )
+
 ```
 
 
+```{r --> ASQ-H rowwise}
+#		THIS SEEMS TO WORK VERY WELL April 19, 2019
+data2 <- data2 %>% 
+    mutate_at(vars(starts_with("asq_")), as.numeric) %>%
+    rowwise() %>% 
+    mutate(asq_heavy = mean(c(asq_10a, asq_11a, asq_12a, asq_13a, asq_14a,
+						  asq_15a), na.rm = TRUE)) %>%
+    ungroup() #%>% 
+    # select(asq_heavy, starts_with("asq_")) %>% 
+    # head(10)
 
 
-```{r ASQ_Heavy}
-#	CREATING THE ASQ-HEAVY VARIABLE 
-#	I NEED TO ASK WHETHER THE MISSING VALUES SHOULD BE CONVERTED TO '0'
-#		FOR SUBJECTS WHO COMPLETED THE QUESTIONNAIRE BUT DIDN’T ENDORSE USE
-data3 <- 
-	mutate(data3,
-		x = pmap_dbl(list(asq_10a, asq_11a, asq_12a, asq_13a, asq_14a,
-						  asq_15a), function(...){
-			row_values <- unlist(list(...))
-			number_of_NAs <- sum(is.na(row_values))
-			map_dbl(number_of_NAs, ~ case_when(
-				.x == 0 ~ mean(row_values),
-				.x >= 1 ~ mean(row_values, na.rm = TRUE) #,
-				# .x == 1 ~ mean(row_values, na.rm = TRUE),
-				# .x == 2 ~ mean(row_values, na.rm = TRUE),
-				# .x == 3 ~ mean(row_values, na.rm = TRUE)
-			))
-		})
-	) %>% 
-	rename(asq_heavy = x)
 ```
-
 
 
 ```{r Subject filter}
 #	LOOKING AT THE 3 GROUPS
 #	FILTER OUT SUBJECT WHERE Groups=other
 #	LOOK FOR A WAY TO AVOID LOSING THIS SUBJECT ENTIRELY
-data4 <- filter(data2, Groups != "other")
+data3 <- filter(data2, Groups != "other")
 ```
 
 #	CREATING SMALLER DATASETS
@@ -208,9 +157,9 @@ FM <- data4 %>%
 CLBP <- data4 %>% 
 	filter(Groups3 == "CLBP")
 
-HCsm <- select(HC, asq_light, asq_heavy,max.temp)
-FMsm <- select(FM, asq_light, asq_heavy,max.temp)
-CLBPsm <- select(CLBP, asq_light, asq_heavy,max.temp)
+HCsm <- select(HC, asq_light, asq_heavy,Max.temp)
+FMsm <- select(FM, asq_light, asq_heavy,Max.temp)
+CLBPsm <- select(CLBP, asq_light, asq_heavy,Max.temp)
 ```
 
 #	EXPLORATORY ANALYSES
@@ -220,17 +169,23 @@ CLBPsm <- select(CLBP, asq_light, asq_heavy,max.temp)
 # 	--> 3 GROUPS <--
 ```{R --> ASQ descriptives}
 #	EXPLORING THE DATA OF THE 3 GROUPS
-ggplot(data = data4) +
-	geom_bar(mapping = aes(x = Groups3))
+ggplot(data = data3) +
+	geom_bar(mapping = aes(x = Groups))
 
-data4 %>% 
-	count(Groups3)
+data3 %>% 
+	count(Groups)
+
+data3 %>% 
+	ggplot(data = data3$asq_light, mapping = aes(x = data3$Groups)) +
+	geom_boxplot()
+
+
 
 #	ASQ MEANS AND SDs OVERALL
-data4 %>%
+data3 %>%
 	summarise(
-		avg_temp = mean(max.temp, na.rm = TRUE),
-		temp_sd = sd(max.temp, na.rm = TRUE),
+		avg_temp = mean(Max.temp, na.rm = TRUE),
+		temp_sd = sd(Max.temp, na.rm = TRUE),
 		avg_asql = mean(asq_light, na.rm = TRUE),
 		asql_sd = sd(asq_light, na.rm = TRUE),
 		avg_asqh = mean(asq_heavy, na.rm = TRUE),
@@ -238,15 +193,16 @@ data4 %>%
 	)
 
 #	ASQ MEANS AND SDs OF THE GROUPS
-data4 %>%
-	group_by(Groups3) %>% 
+data3 %>%
+	group_by(Groups) %>% 
 		summarise(
-			avg_temp = mean(max.temp, na.rm = TRUE),
-			temp_sd = sd(max.temp, na.rm = TRUE),
-			avg_asql = mean(asq_light, na.rm = TRUE),
-			asql_sd = sd(asq_light, na.rm = TRUE),
-			avg_asqh = mean(asq_heavy, na.rm = TRUE),
-			asqh_sd = sd(asq_heavy, na.rm = TRUE)
+			avg_temp = mean(data3$`Max temp`, na.rm = TRUE)#,
+		#	as.numeric() #,
+			# temp_sd = sd(Max temp, na.rm = TRUE),
+			# avg_asql = mean(asq_light, na.rm = TRUE),
+			# asql_sd = sd(asq_light, na.rm = TRUE),
+			# avg_asqh = mean(asq_heavy, na.rm = TRUE),
+			# asqh_sd = sd(asq_heavy, na.rm = TRUE)
 		)
 
 #	HISTOGRAMS OF ASQ SCORES
@@ -268,7 +224,7 @@ ggplot(data = data4) +
 ```{r --> ASQ Correlations}
 #	LEARNING HOW TO CALCULATE CORRELATIONS
 #	CREATING A SMALLER DATASET OF ALL SUBJECTS
-vars_keep <- select(data4, asq_light, asq_heavy,max.temp)
+vars_keep <- select(data4, asq_light, asq_heavy,Max.temp)
 
 #	This works correctly by does not have any p-values = ok not great 
 #	Calculating correlations
@@ -386,7 +342,7 @@ complete_dataset <- read.csv(file = 'https://raw.githubusercontent.com/BrainStor
 small_subset <- complete_dataset %>%
   # as far as I can see, there's not a single participant with "other" as Group3
   filter(Groups3 != "other") %>% 
-  select(asq_light, asq_heavy, max.temp)
+  select(asq_light, asq_heavy, Max.temp)
 
 correlation_matrix <- corr.test(x = small_subset,
                                 use = "complete", # available: pairwise, complete
@@ -442,8 +398,8 @@ print(HCcor2.ASQsubscale)
 cor.mtest(HCsm)
 
 cor.test(HCsm$asq_light, HCsm$asq_heavy)
-cor.test(HCsm$asq_light, HCsm$max.temp)
-cor.test(HCsm$asq_heavy, HCsm$max.temp)
+cor.test(HCsm$asq_light, HCsm$Max.temp)
+cor.test(HCsm$asq_heavy, HCsm$Max.temp)
 
 
 #	GRAPHS OF CORRELATIONS
@@ -489,8 +445,8 @@ print(FMcor.ASQsubscale)
 cor.mtest(FMsm)
 
 cor.test(FMsm$asq_light, FMsm$asq_heavy)
-cor.test(FMsm$asq_light, FMsm$max.temp)
-cor.test(FMsm$asq_heavy, FMsm$max.temp)
+cor.test(FMsm$asq_light, FMsm$Max.temp)
+cor.test(FMsm$asq_heavy, FMsm$Max.temp)
 
 corrplot(FMcor, method = "number")
 
@@ -528,8 +484,8 @@ corrplot(CLBPcor, method = "number")
 
 # LightASQ and PILL: significant
 cor.test(CLBPsm$asq_light, CLBPsm$asq_heavy)
-cor.test(CLBPsm$asq_light, CLBPsm$max.temp)
-cor.test(CLBPsm$asq_heavy, CLBPsm$max.temp)
+cor.test(CLBPsm$asq_light, CLBPsm$Max.temp)
+cor.test(CLBPsm$asq_heavy, CLBPsm$Max.temp)
 ```
 
 
@@ -611,7 +567,7 @@ data4 %>%
 
 #data4 %>% 
 
-cor.test(data4$asq_light, data4$max.temp, meathod = "spearm", na.rm = TRUE)
+cor.test(data4$asq_light, data4$Max.temp, meathod = "spearm", na.rm = TRUE)
 
 
 data4 %>% cor(x = data4$asq_light, y = data4$asq_heavy)
@@ -647,13 +603,13 @@ plot(TukeyHSD(myModel, "Groups3", rm.na = TRUE) )
 ```
 
 
-##	ANOVA MAX-TEMP BY 3 GROUPS
+##	ANOVA Max-TEMP BY 3 GROUPS
 ```{r}
-myModel2 <- aov(max.temp ~ Groups3, data = data3)
+myModel2 <- aov(Max.temp ~ Groups3, data = data3)
 myModel2
 
 anova(myModel2)
-pairwise.t.test(data3$max.temp, data3$Groups3)
+pairwise.t.test(data3$Max.temp, data3$Groups3)
 plot(myModel2)
 TukeyHSD(myModel2, "Groups3", rm.na = TRUE)
 plot(TukeyHSD(myModel2, "Groups3", rm.na = TRUE) )
@@ -671,7 +627,7 @@ select(data2,
 	   ends_with("a")
 	   # matches("asq_..a"), #	REGULAR EXPRESSION
 	   #starts_with("typical"),
-	   # max.temp
+	   # Max.temp
 )
 
 ```
@@ -1120,15 +1076,15 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 # select(data2, everything())
 # filter(data2, Count == 12)
 filter(data2, participant_id == "IP005")
-data3 <- select(data2, participant_id, max.temp)
+data3 <- select(data2, participant_id, Max.temp)
 data3
 filter(data3, participant_id  == "IP005")
 filter(data3, participant_id  == "IP168")
 filter(data3, participant_id  == "IP183")
 data3
-data3[data3$participant_id == "IP005", "max.temp"] <- 50
-data3[data3$participant_id == "IP168", "max.temp"] <- 50
-data3[data3$participant_id == "IP183", "max.temp"] <- 48
+data3[data3$participant_id == "IP005", "Max.temp"] <- 50
+data3[data3$participant_id == "IP168", "Max.temp"] <- 50
+data3[data3$participant_id == "IP183", "Max.temp"] <- 48
 
 ```
 
@@ -1143,7 +1099,7 @@ asq_sm <- select(data2,
 				 ends_with("a")
 				 # matches("asq_..a"), #	REGULAR EXPRESSION
 				 #starts_with("typical"),
-				 # max.temp
+				 # Max.temp
 				 )
 #View(asq_sm)
 
@@ -1211,7 +1167,7 @@ names(asq_sm)[names(asq_sm)=="x"] <- "asq_h"
 
 
 #	CREATING TEMPORARY DATA SUBSET
-# tmp <- select(data2, participant_id, max.temp)
+# tmp <- select(data2, participant_id, Max.temp)
 
 #		BLOCK COMMENTS
 # <!-- START OF BLOCK 
@@ -1248,13 +1204,13 @@ corrplot(Ms, order = "original", col = wb,
 
 # EDIT DATA (valid as of April 16, 2019)
 
-	DO NOT NEEDED TO CHANGE MAX TEMP AS OF April 17, 2019
+	DO NOT NEEDED TO CHANGE Max TEMP AS OF April 17, 2019
 <!-- ```{r}
-#	CORRECTING AN ERROR IN THE MAX TEMP OF THREE SUBJECTS
-#	CHANGING THE max.temp VALUE
-data2[data2$participant_id == "IP005", "max.temp"] <- 50
-data2[data2$participant_id == "IP168", "max.temp"] <- 50
-data2[data2$participant_id == "IP183", "max.temp"] <- 48
+#	CORRECTING AN ERROR IN THE Max TEMP OF THREE SUBJECTS
+#	CHANGING THE Max.temp VALUE
+data2[data2$participant_id == "IP005", "Max.temp"] <- 50
+data2[data2$participant_id == "IP168", "Max.temp"] <- 50
+data2[data2$participant_id == "IP183", "Max.temp"] <- 48
 
 
 
@@ -1309,3 +1265,73 @@ ggplot(data = data4) +
 # 	geom_freqpoly(binwidth = 0.1)
 
  ```-->
+
+#		creating variables
+<!--
+```{r ASQ_Light OLD version as of April 19, 2019 }
+#	CREATING THE ASQ-LIGHT VARIABLE 
+#	I NEED TO ASK WHETHER THE MISSING VALUES SHOULD BE CONVERTED TO '0'
+#		FOR SUBJECTS WHO COMPLETED THE QUESTIONNAIRE BUT DIDN’T ENDORSE USE
+data2.1 <- 
+	mutate(data2,
+		x = pmap_dbl(list(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
+						  asq_6a, asq_7a, asq_8a, asq_9a), function(...){
+			row_values <- unlist(list(...))
+			number_of_NAs <- sum(is.na(row_values))
+			map_dbl(number_of_NAs, ~ case_when(
+				.x == 0 ~ mean(row_values),
+				.x >= 1 ~ mean(row_values, na.rm = FALSE) #,
+				# .x == 1 ~ mean(row_values, na.rm = TRUE),
+				# .x == 2 ~ mean(row_values, na.rm = TRUE),
+				# .x == 3 ~ mean(row_values, na.rm = TRUE)
+			))
+		})
+	) %>% 
+	rename(asq_light = x )
+``` -->
+
+<!--
+```{r ASQ_Light}
+#	CREATING THE ASQ-LIGHT VARIABLE 
+#	I NEED TO ASK WHETHER THE MISSING VALUES SHOULD BE CONVERTED TO '0'
+#		FOR SUBJECTS WHO COMPLETED THE QUESTIONNAIRE BUT DIDN’T ENDORSE USE
+data2.1 <- 
+	mutate(data2,
+		x = pmap_dbl(list(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
+						  asq_6a, asq_7a, asq_8a, asq_9a), function(...){
+			row_values <- unlist(list(...))
+			number_of_NAs <- sum(is.na(row_values))
+			map_dbl(number_of_NAs, ~ case_when(
+				.x == 0 ~ mean(row_values),
+				.x >= 1 ~ mean(row_values, na.rm = TRUE) #,
+				# .x == 1 ~ mean(row_values, na.rm = TRUE),
+				# .x == 2 ~ mean(row_values, na.rm = TRUE),
+				# .x == 3 ~ mean(row_values, na.rm = TRUE)
+			))
+		})
+	) %>% 
+	rename(asq_light = x )
+```-->
+
+<!--
+```{r ASQ_Heavy}
+#	CREATING THE ASQ-HEAVY VARIABLE 
+#	I NEED TO ASK WHETHER THE MISSING VALUES SHOULD BE CONVERTED TO '0'
+#		FOR SUBJECTS WHO COMPLETED THE QUESTIONNAIRE BUT DIDN’T ENDORSE USE
+data3 <- 
+	mutate(data3,
+		x = pmap_dbl(list(asq_10a, asq_11a, asq_12a, asq_13a, asq_14a,
+						  asq_15a), function(...){
+			row_values <- unlist(list(...))
+			number_of_NAs <- sum(is.na(row_values))
+			map_dbl(number_of_NAs, ~ case_when(
+				.x == 0 ~ mean(row_values),
+				.x >= 1 ~ mean(row_values, na.rm = TRUE) #,
+				# .x == 1 ~ mean(row_values, na.rm = TRUE),
+				# .x == 2 ~ mean(row_values, na.rm = TRUE),
+				# .x == 3 ~ mean(row_values, na.rm = TRUE)
+			))
+		})
+	) %>% 
+	rename(asq_heavy = x)
+``` -->
