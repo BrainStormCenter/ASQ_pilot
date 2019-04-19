@@ -19,20 +19,20 @@ To begin, one has to have an idea of what packages R will need to load to accomp
 
 ##	LIBRARIES
 ```{r}
-library(readxl) # This is used to import data from excel
-library(readr)	# Some additional options for reading csv data
-library(stringr)
-library(ez)
-library(Hmisc)
-library(doBy)
+# library(readxl) # This is used to import data from excel
+# library(readr)	# Some additional options for reading csv data
+# library(stringr)
+# library(ez)
+# library(Hmisc)
+# library(doBy)
 library(psych)
-library(purrr)
-library(ggplot2)
-library(modelr)
-library(janitor)	# This will be used to exclude empty columns
-library(corrplot)
+# library(purrr)
+# library(ggplot2)
+# library(modelr)
+# library(janitor)	# This will be used to exclude empty columns
+# library(corrplot)
 #options(na.action = na.exclude)
-library(PerformanceAnalytics)
+# library(PerformanceAnalytics)
 library(tidyverse)
 library(here)
 here() # THIS SETS THE WORKING DIRECTORY TO THE LOCATION OF THIS FILE
@@ -63,14 +63,14 @@ setwd("/Users/jcraggs/Documents/git/Rstudio/ASQ_pilot/")
 ```{r Read-write files}
 #Read Data
 #		Data exported from RedCap on April 4, 2019
-data1 <- read_csv("ASQ_pain_pilot_2019_04_18.csv",
-				  col_names = TRUE, 
-				  col_types = NULL,
-				  quoted_na = FALSE)
-data2 <- as_tibble(data1)
+# data0 <- read_csv("ASQ_pain_pilot_2019_04_18.csv",
+# 				  col_names = TRUE, 
+# 				  col_types = NULL,
+# 				  quoted_na = FALSE)
+# data1 <- as_tibble(data1)
 
-data21 <- read.csv("ASQ_pilot_2019_04_09.csv", header = TRUE)
-data2 <- as_tibble(data2)
+data1 <- read.csv("ASQ_pain_pilot_2019_04_18.csv", header = TRUE)
+data2 <- as_tibble(data1)
 #		RAW DATA ON GITHUB
 #data3 <- read_csv(url('https://raw.githubusercontent.com/BrainStormCenter/ASQ_pilot/master/ASQ_pain_pilot_2019_04_18.csv'), header = TRUE)
 
@@ -100,15 +100,15 @@ levels(dataFactors$painduration)
 #	CREATING THE ASQ-LIGHT VARIABLE 
 #	I NEED TO ASK WHETHER THE MISSING VALUES SHOULD BE CONVERTED TO '0'
 #		FOR SUBJECTS WHO COMPLETED THE QUESTIONNAIRE BUT DIDN’T ENDORSE USE
-data2 <- 
-	mutate(data1,
+data2.1 <- 
+	mutate(data2,
 		x = pmap_dbl(list(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
 						  asq_6a, asq_7a, asq_8a, asq_9a), function(...){
 			row_values <- unlist(list(...))
 			number_of_NAs <- sum(is.na(row_values))
 			map_dbl(number_of_NAs, ~ case_when(
 				.x == 0 ~ mean(row_values),
-				.x >= 1 ~ mean(row_values), na.rm = TRUE) #,
+				.x >= 1 ~ mean(row_values, na.rm = FALSE) #,
 				# .x == 1 ~ mean(row_values, na.rm = TRUE),
 				# .x == 2 ~ mean(row_values, na.rm = TRUE),
 				# .x == 3 ~ mean(row_values, na.rm = TRUE)
@@ -117,6 +117,53 @@ data2 <-
 	) %>% 
 	rename(asq_light = x )
 ```
+
+```{r}
+data99 <- 
+	mutate(data2,
+		   x = pmap_dbl(list(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
+		   				  asq_6a, asq_7a, asq_8a, asq_9a), function(...){
+		   				  	row_values <- unlist(list(...))
+		   				  	number_of_NAs <- sum(is.na(row_values))
+		   				  }
+		   )
+	)
+
+```
+
+
+```{r}
+#	CREATING TEMPORARY DATA SUBSET
+tmp <- select(data2.1, ID, asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
+						  asq_6a, asq_7a, asq_8a, asq_9a)
+
+```
+
+
+```{r ASQ_Light}
+#	CREATING THE ASQ-LIGHT VARIABLE 
+#	I NEED TO ASK WHETHER THE MISSING VALUES SHOULD BE CONVERTED TO '0'
+#		FOR SUBJECTS WHO COMPLETED THE QUESTIONNAIRE BUT DIDN’T ENDORSE USE
+data2.1 <- 
+	mutate(data2,
+		x = pmap_dbl(list(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
+						  asq_6a, asq_7a, asq_8a, asq_9a), function(...){
+			row_values <- unlist(list(...))
+			number_of_NAs <- sum(is.na(row_values))
+			map_dbl(number_of_NAs, ~ case_when(
+				.x == 0 ~ mean(row_values),
+				.x >= 1 ~ mean(row_values, na.rm = TRUE) #,
+				# .x == 1 ~ mean(row_values, na.rm = TRUE),
+				# .x == 2 ~ mean(row_values, na.rm = TRUE),
+				# .x == 3 ~ mean(row_values, na.rm = TRUE)
+			))
+		})
+	) %>% 
+	rename(asq_light = x )
+```
+
+
+
 
 ```{r ASQ_Heavy}
 #	CREATING THE ASQ-HEAVY VARIABLE 
