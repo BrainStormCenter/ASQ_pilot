@@ -22,7 +22,7 @@ To begin, one has to have an idea of what packages R will need to load to accomp
 # library(readxl) # This is used to import data from excel
 # library(readr)	# INCLUDED IN TIDYVERSE  options for reading csv data
 # library(stringr)
-# library(ez)
+library(ez)
 # library(Hmisc)
 # library(doBy)
 library(psych)
@@ -30,7 +30,7 @@ library(psych)
 library(ggplot2)
 # library(modelr)
 # library(janitor)	# This will be used to exclude empty columns
-# library(corrplot)
+library(corrplot)
 #options(na.action = na.exclude)
 # library(PerformanceAnalytics)
 library(tidyverse)
@@ -63,15 +63,16 @@ dr_here(show_reason = FALSE)
 ```{r Read-write files}
 #Read Data
 #		Data exported from RedCap on April 4, 2019
-data0 <- read_csv("ASQ_pain_pilot_2019_04_19.csv",
+data0 <- read_csv("ASQ_pain_pilot_2019_04_19_v2.csv",
 				  col_names = TRUE,
 				  col_types = NULL,
 				  quoted_na = FALSE)
-data1 <- as_tibble(data0)
+# data1 <- as_tibble(data0)
+data1 <- data0
 
-# data1 <- read.csv("ASQ_pain_pilot_2019_04_18.csv", header = TRUE)
-# data2 <- as_tibble(data1)
+data97 <- read.csv("ASQ_pain_pilot_2019_04_19_v2.csv", header = TRUE)
 #		RAW DATA ON GITHUB
+# data2 <- as_tibble(data1)
 #data3 <- read_csv(url('https://raw.githubusercontent.com/BrainStormCenter/ASQ_pilot/master/ASQ_pain_pilot_2019_04_18.csv'), header = TRUE)
 
 
@@ -105,6 +106,8 @@ levels(dataFactors$painduration)
 tmp <- select(data2.1, ID, asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
 						  asq_6a, asq_7a, asq_8a, asq_9a)
 
+
+temp0 <- select(data0, ID, `Max temp`)
 ```
 
 #		CREATING NEW VARIABLE 
@@ -119,7 +122,12 @@ data2 <- data1 %>%
     # select(asq_light, starts_with("asq_")) %>%
 	# head(10)
 
-
+data98 <- data97 %>%
+	mutate_at(vars(starts_with("asq_")), as.numeric) %>%
+	rowwise() %>% 
+	mutate(asq_light = mean(c(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
+							  asq_6a, asq_7a, asq_8a, asq_9a), na.rm = TRUE)) %>%
+	ungroup()
 ```
 
 
@@ -134,7 +142,12 @@ data2 <- data2 %>%
     # select(asq_heavy, starts_with("asq_")) %>% 
     # head(10)
 
-
+data98 <- data98 %>% 
+    mutate_at(vars(starts_with("asq_")), as.numeric) %>%
+    rowwise() %>% 
+    mutate(asq_heavy = mean(c(asq_10a, asq_11a, asq_12a, asq_13a, asq_14a,
+						  asq_15a), na.rm = TRUE)) %>%
+    ungroup() #%>% 
 ```
 
 
@@ -143,6 +156,8 @@ data2 <- data2 %>%
 #	FILTER OUT SUBJECT WHERE Groups=other
 #	LOOK FOR A WAY TO AVOID LOSING THIS SUBJECT ENTIRELY
 data3 <- filter(data2, Groups != "other")
+
+data99 <- filter(data98, Groups != "other")
 ```
 
 #	CREATING SMALLER DATASETS
@@ -175,7 +190,54 @@ ggplot(data = data3) +
 data3 %>% 
 	count(Groups)
 
+
 data3 %>% 
+	group_by(data3$Groups) %>%
+	summarise(
+		avgTemp = mean(data3$max.temp, na.rm = TRUE)
+	)
+
+data99 %>% 
+	count(Groups)
+
+data99 %>% 
+	group_by(Groups) %>%
+	summarise(
+		avg_temp = mean(max.temp, na.rm = TRUE),
+		temp_sd = sd(max.temp, na.rm = TRUE),
+		avg_asql = mean(asq_light, na.rm = TRUE),
+		asql_sd = sd(asq_light, na.rm = TRUE),
+		avg_asqh = mean(asq_heavy, na.rm = TRUE),
+		asqh_sd = sd(asq_heavy, na.rm = TRUE)
+	)
+
+
+small_subset <- data99 %>% 
+	select(asq_light, asq_heavy, max.temp)
+
+correlation_matrix <- corr.test(x = small_subset,
+								use = "complete", # available: pairwise, complete
+								method = "spearman", # available: pearson, spearman, kendall
+								adjust = "none") # available: holm, hochberg, hommel, bonferroni, BH, BY, fd, none
+
+print(x = correlation_matrix,
+	  short = FALSE)
+corrplot(correlation_matrix[["r"]])
+
+
+#	Meredith's correlation method
+Gp3cor.ASQtemp <- ezCor(
+  data = small_subset[,c(1:3)],
+  r_size_lims = c(4,4),
+  label_size = 3
+)
+print(Gp3cor.ASQtemp)
+
+
+```
+
+```{r}
+data3 %>%  #	THIS IS NOT WORKING
 	ggplot(data = data3$asq_light, mapping = aes(x = data3$Groups)) +
 	geom_boxplot()
 
@@ -184,21 +246,25 @@ data3 %>%
 #	ASQ MEANS AND SDs OVERALL
 data3 %>%
 	summarise(
-		avg_temp = mean(Max.temp, na.rm = TRUE),
-		temp_sd = sd(Max.temp, na.rm = TRUE),
+		avg_temp = mean(max.temp, na.rm = TRUE),
+		temp_sd = sd(max.temp, na.rm = TRUE),
 		avg_asql = mean(asq_light, na.rm = TRUE),
 		asql_sd = sd(asq_light, na.rm = TRUE),
 		avg_asqh = mean(asq_heavy, na.rm = TRUE),
 		asqh_sd = sd(asq_heavy, na.rm = TRUE)
 	)
 
+data3 %>%  # THIS IS NOT WORKING
+group_by(data3$Groups) %>% 
+	summarise(MAXXtemp = count(data3$max.temp)
+			  )
+
 #	ASQ MEANS AND SDs OF THE GROUPS
 data3 %>%
-	group_by(Groups) %>% 
+	group_by(data3$Groups) %>%
 		summarise(
-			avg_temp = mean(data3$`Max temp`, na.rm = TRUE)#,
-		#	as.numeric() #,
-			# temp_sd = sd(Max temp, na.rm = TRUE),
+			avg_temp = mean(data3$max.temp, na.rm = TRUE),
+			temp_sd = sd(data3$max.temp, na.rm = TRUE)
 			# avg_asql = mean(asq_light, na.rm = TRUE),
 			# asql_sd = sd(asq_light, na.rm = TRUE),
 			# avg_asqh = mean(asq_heavy, na.rm = TRUE),
