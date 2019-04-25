@@ -1,0 +1,17 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+The goals for the pilot analyses are to
+\begin{enumerate}
+\item correlations between ASQ variables and max temp
+\item correlations between ASQ variables and other pain measures
+\end{enumerate}
+
+
+Talk with Bruce about his findings.
+
+Work on Changing the specific aims of the grant.
+
+\end{document}
