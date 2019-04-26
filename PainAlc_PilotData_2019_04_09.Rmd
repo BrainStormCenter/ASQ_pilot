@@ -3,7 +3,10 @@ title: "ASQ_pilot"
 author: "Jason"
 created: "4/4/2019"
 modified: "23/04/2019"
-output: html_document
+output: 
+  html_document: 
+    fig_caption: yes
+    toc: yes
 editor_options: 
   chunk_output_type: console
 ---
@@ -24,6 +27,7 @@ The goal of these analyses is to look at the following relationships
 ```{r}
 #		To begin, one has to have an idea of what packages R will need to load to accomplish your goals. The packages below are the ones I will need to analyze the ASQ pilot data.
 library(ez)
+library(colorspace)
 library(psych)
 # library(ggplot2)
 library(corrplot)
@@ -54,9 +58,6 @@ dr_here(show_reason = FALSE)
 
 #		RAW DATA ON GITHUB
 data0 <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/ASQ_pilot/master/ASQ_pain_pilot_2019_04_19_v2.csv'), header = TRUE)
-
-
-
 
 #		LOCAL DATA
 # data0 <- read.csv("ASQ_pain_pilot_2019_04_19_v2.csv", header = TRUE)
@@ -129,21 +130,8 @@ data2 <- data2 %>%
 
 
 ##		EXAMINE DATA: 3-Groups
-```{R ---> Group descriptives}
-#	EXPLORING THE DATA OF THE 3 GROUPS
-ggplot(data = data2) +
-	geom_bar(mapping = aes(x = Groups))
 
-data2 %>% 
-	count(Groups)
-
-data2 %>% 
-	group_by(Groups) %>%
-	summarise(
-		avgTemp = mean(max.temp, na.rm = TRUE)
-	)
-
-
+```{r ---> initial data summary}
 ASQGpSummary <- data2 %>% 
 	group_by(Groups) %>%
 	summarise(
@@ -155,15 +143,75 @@ ASQGpSummary <- data2 %>%
 		asqh_sd = sd(asq_heavy, na.rm = TRUE)
 	)
 
+
+```
+
+
+
+```{R ---> Visual group descriptives}
+#	EXPLORING THE DATA OF THE 3 GROUPS
+
+#		GROUP COUNTS
+data2 %>% 
+	count(Groups)
+
+ggplot(data = data2) +
+	geom_bar(mapping = aes(x = Groups))
+
+#		GROUP PLOTS FOR max.temp FOR EACH GROUP = Version 1
+ggplot(data2, aes(Groups, max.temp, colour = Groups)) +
+  geom_point() +
+  geom_point(data = ASQGpSummary, aes(y = avg_temp), colour = 'purple3', size = 3)
+
+#		GROUP PLOTS FOR max.temp FOR EACH GROUP - WITH ERROR BARS = Version 2
+ggplot() +
+	geom_point(data = data2, aes(Groups, max.temp, colour = Groups)) +
+	geom_point(data = ASQGpSummary, 
+			   aes(Groups, avg_temp), colour = 'purple3', size = 5) +
+	geom_errorbar(
+		data = ASQGpSummary,
+		aes(Groups, avg_temp, ymin = avg_temp - temp_sd,
+			ymax = avg_temp + temp_sd), colour = 'green',
+		width = 0.5) 
+
+#		GROUP PLOTS FOR max.temp FOR EACH GROUP - WITH ERROR BARS = Version 3
+q <- ggplot(ASQGpSummary, aes(Groups, avg_temp,colour = Groups))
+z <- q + geom_linerange(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
+					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd))
+z <- z + geom_pointrange(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
+					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd))
+z <- z + geom_errorbar(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
+					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd),
+				  width = 0.2)
+print(z)
+# z <- z + geom_crossbar(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
+# 					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd),
+# 				  width = 0.2)
+
+
+
+
+p <- ggplot(data2, aes(Groups, max.temp, colour = Groups))
+p + geom_linerange(aes(ymin = lower, ymax = upper))	
+	
+	
+	
+data2 %>% 
+	group_by(Groups) %>%
+	summarise(
+		avgTemp = mean(max.temp, na.rm = TRUE)
+	)
+
+
 ```
 
 
 
 ```{r ---> Correlations, echo=TRUE}
-small_subset <- data2 %>% 
+smallDa_subset <- data2 %>% 
 	select(asq_light, asq_heavy, max.temp)
 
-small_subset2 <- data2 %>% 
+smData <- data2 %>% 
 	select(asq_light, asq_heavy, max.temp, bdi_total, pdi_total, pill_total, stait_total)
 
 #			USE THE SECOND ANALYSES
@@ -217,7 +265,7 @@ col4 <- colorRampPalette(c("#7F0000", "red", "#FF7F00", "yellow", "#7FFF7F",
 wb <- c("white", "black")
 
 
-corrplot(correlation_matrix2[["r"]],
+corrplot(corr_matrix2[["r"]],
 		 method = "number",
 		 type = c("full"),
 		 diag = FALSE,
@@ -250,14 +298,14 @@ corrplot(corr_matrix2[["r"]],
 		 type = c("full"),
 		 diag = FALSE,
 		 # addCoef.col = FALSE,
-		 p.mat = correlation_matrix2[["p"]],
+		 p.mat = corr_matrix2[["p"]],
 		 sig.level = 0.554,
 		 addCoef.col = "yellow",
 		 # addCoefasPercent = TRUE,
 		 # tl.pos = "d",
 		 mar = c(3,3,1,3) + 0.1,
 		 tl.srt = 0,
-		 col = col2(21),
+		 col = pal(25), #col.test, #col2(21),
 		 cl.pos = "r",
 		 cl.lim = c(-.5,1),
 		 cl.length = 11,
@@ -339,6 +387,39 @@ corrplot(corr_matrix3[["r"]], add = TRUE, type = "lower", method = "ellipse", or
 ```
 
 
+
+```{r ---> Cor and p-values}
+corr.data(mtcars) %>% 
+  ggplot(aes(colvars, fct_rev(rowvars))) +
+  geom_tile(colour="grey20", aes(fill=corr), size=0.5) +
+  #geom_point(aes(size=p.value, colour=cut(abs(corr), c(0, 0.01, 0.05, 1), include.lowest=TRUE)), pch=15) +
+  geom_text(aes(label=sprintf("%1.2f", corr)), position=position_nudge(y=0.2), 
+            size=3, colour="white") +
+  geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), position=position_nudge(y=-0.2), 
+            size=2.5, colour="white") +
+  scale_fill_gradient2(low="red", mid="yellow2", high="blue", midpoint=0, limits=c(-1,1)) +
+  scale_size_continuous(range=c(8,12)) +
+  labs(x="",y="") +
+  theme_classic() +
+  coord_fixed()
+
+corr.data(data2) %>% 
+  ggplot(aes(colvars, fct_rev(rowvars))) +
+  geom_tile(colour="grey20", aes(fill=corr), size=0.5) +
+  #geom_point(aes(size=p.value, colour=cut(abs(corr), c(0, 0.01, 0.05, 1), include.lowest=TRUE)), pch=15) +
+  geom_text(aes(label=sprintf("%1.2f", corr)), position=position_nudge(y=0.2), 
+            size=3, colour="white") #+
+
+
+  geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), position=position_nudge(y=-0.2), 
+            size=2.5, colour="white") +
+  scale_fill_gradient2(low="red", mid="yellow2", high="blue", midpoint=0, limits=c(-1,1)) +
+  scale_size_continuous(range=c(8,12)) +
+  labs(x="",y="") +
+  theme_classic() +
+  coord_fixed()
+
+```
 ## small break
 
 
