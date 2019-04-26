@@ -1,0 +1,324 @@
+---
+title: "rstatsnewbie"
+author: "Jason"
+date: "4/26/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## PURPOSE: This document is for me to test various things in RStudio, usually found on the community website.
+
+## CORRELATIONS
+```{r ---> creating data}
+library(tidyverse)
+
+# Function to get correletions and p.values in a "long" data frame
+corr.data = function(data) {
+  
+  # Get correlations
+  cor.vals = cor(data)
+  
+  # Get p-values
+  cor.p = cor.mtest(data, conf.level = 0.95)$p
+  rownames(cor.p) = rownames(cor.vals)
+  colnames(cor.p) = colnames(cor.vals)
+  
+  cbind(rowvars=rownames(cor.vals), data.frame(cor.vals)) %>% 
+    gather(colvars, corr, -rowvars) %>% 
+    left_join(cbind(rowvars=rownames(cor.p), data.frame(cor.p)) %>% 
+                gather(colvars, p.value, -rowvars))
+}
+
+
+
+smData <- data2 %>% 
+	select(asq_light, asq_heavy, max.temp, bdi_total, pdi_total, pill_total, stait_total)
+
+# Function to get correletions and p.values in a "long" data frame
+corr.data2 = function(data) {
+  
+  # Get correlations
+  cor.vals = cor(data, use = "complete.obs", method = "spearman")
+  
+  # Get p-values
+  cor.p = cor.mtest(data, conf.level = 0.95)$p
+  rownames(cor.p) = rownames(cor.vals)
+  colnames(cor.p) = colnames(cor.vals)
+  
+  cbind(rowvars=rownames(cor.vals), data.frame(cor.vals)) %>% 
+    gather(colvars, corr, -rowvars) %>% 
+    left_join(cbind(rowvars=rownames(cor.p), data.frame(cor.p)) %>% 
+                gather(colvars, p.value, -rowvars))
+}
+
+
+
+
+cor.vals2 <- cor(smData, use = "complete.obs", method = "spearman")
+
+cor.vals = cor(smData)
+
+
+```
+
+
+```{r ---> plotting the above data}
+# Create plot
+corr.data2(smData) %>% 
+  ggplot(aes(colvars, fct_rev(rowvars))) +
+    geom_tile(colour="grey70", fill=NA) +
+    geom_text(aes(label=sprintf("%1.2f", corr)), position=position_nudge(y=0.2), 
+                      size=3, colour="grey20") +
+    geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), position=position_nudge(y=-0.2), 
+                      colour="grey20", size=2.5) +
+    labs(x="",y="") +
+    theme_classic() +
+    coord_fixed()
+
+```
+
+
+```{r ---> plotting the above data}
+# Create plot
+corr.data(smData) %>% 
+  ggplot(aes(colvars, fct_rev(rowvars))) +
+    geom_tile(colour="grey70", fill=NA) +
+    geom_text(aes(label=sprintf("%1.2f", corr)), position=position_nudge(y=0.2), 
+                      size=3, colour="grey20") +
+    geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), position=position_nudge(y=-0.2), 
+                      colour="grey20", size=2.5) +
+    labs(x="",y="") +
+    theme_classic() +
+    coord_fixed()
+
+```
+
+
+
+```{r}
+# Or, with the tile fill mapped to correlation:
+
+corr.data(mtcars) %>% 
+  ggplot(aes(colvars, fct_rev(rowvars))) +
+  geom_tile(colour="grey20", aes(fill=corr), size=0.5) +
+  #geom_point(aes(size=p.value, colour=cut(abs(corr), c(0, 0.01, 0.05, 1), include.lowest=TRUE)), pch=15) +
+  geom_text(aes(label=sprintf("%1.2f", corr)), position=position_nudge(y=0.2), 
+            size=3, colour="white") +
+  geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), position=position_nudge(y=-0.2), 
+            size=2.5, colour="white") +
+  scale_fill_gradient2(low="red", mid="yellow2", high="blue", midpoint=0, limits=c(-1,1)) +
+  scale_size_continuous(range=c(8,12)) +
+  labs(x="",y="") +
+  theme_classic() +
+  coord_fixed()
+
+
+#		USE THE FUNCTION TO GET r and p values AND THEN PLOT THEM 
+# C.plot <- 
+corr.data2(smData) %>% 
+	ggplot(aes(colvars, fct_rev(rowvars))) +
+	geom_tile(colour="grey20", aes(fill=corr), size=0.5, na.rm = TRUE) +
+	#geom_point(aes(size=p.value, colour=cut(abs(corr), c(0, 0.01, 0.05, 1), include.lowest=TRUE)), pch=15) +
+	geom_text(aes(label=sprintf("%1.2f", corr)), position=position_nudge(y=0.2), 
+			  size=3, colour="white") +
+	geom_text(aes(label=paste0("(",sprintf("%1.2f", p.value),")")), position=position_nudge(y=-0.2), 
+			  size=2.5, colour= "white") + #hsv(h=.0, s=1,v=1)) +
+	scale_fill_gradient2(low="red", mid="yellow2", high="steelblue4", midpoint=0, limits=c(-1,1)) +
+	scale_size_continuous(range=c(8,12)) +
+	labs(x="",y="") +
+	theme_classic() +
+	coord_fixed()
+
+
+```
+
+
+```{r ---> colors}
+col.test <- c(pal(7))
+
+```
+
+
+
+```{r}
+require(graphics)
+pairs(iris)
+cor.test(~ Sepal.Width + Sepal.Length, data = iris)
+
+```
+
+
+
+```{r}
+# ggplot examples
+df <- data.frame(
+  gp = factor(rep(letters[1:3], each = 10)),
+  y = rnorm(30)
+)
+
+ds <- plyr::ddply(df, "gp", plyr::summarise, mean = mean(y), sd = sd(y))
+
+# The summary data frame ds is used to plot larger red points on top
+# of the raw data. Note that we don't need to supply `data` or `mapping`
+# in each layer because the defaults from ggplot() are used.
+ggplot(df, aes(gp, y)) +
+  geom_point() +
+  geom_point(data = ds, aes(y = mean), colour = 'red', size = 3)
+
+ggplot(data2, aes(Groups, max.temp)) +
+  geom_point() +
+  geom_point(data = ASQGpSummary, aes(y = avg_temp), colour = 'red', size = 3) 
+
+
+
+
+# Same plot as above, declaring only the data frame in ggplot().
+# Note how the x and y aesthetics must now be declared in
+# each geom_point() layer.
+ggplot(df) +
+  geom_point(aes(gp, y)) +
+  geom_point(data = ds, aes(gp, mean), colour = 'red', size = 3)
+
+# Alternatively we can fully specify the plot in each layer. This
+# is not useful here, but can be more clear when working with complex
+# mult-dataset graphics
+ggplot() +
+  geom_point(data = df, aes(gp, y)) +
+  geom_point(data = ds, aes(gp, mean), colour = 'red', size = 3) +
+  geom_errorbar(
+    data = ds,
+    aes(gp, mean, ymin = mean - sd, ymax = mean + sd),
+    colour = 'red',
+    width = 0.4
+  )
+
+
+ggplot(data2, aes(Groups, max.temp)) +
+  geom_point() +
+  geom_point(data = ASQGpSummary, aes(y = avg_temp), colour = 'red', size = 3)
+
+
+ggplot() +
+  geom_point(data = data2, aes(Groups, max.temp)) +
+  geom_point(data = ASQGpSummary, aes(Groups, avg_temp), colour = 'red', size = 3) +
+  geom_errorbar(
+    data = ASQGpSummary,
+    aes(Groups, avg_temp, ymin = avg_temp - temp_sd, ymax = avg_temp + temp_sd),
+    colour = 'green',
+    width = 0.4
+  )
+
+
+
+ggplot() +
+	geom_point(data = data2, aes(Groups, max.temp)) +
+	geom_point(data = ASQGpSummary, aes(Groups, avg_temp), colour = 'red', size = 3) +
+	geom_errorbar(
+    data = ASQGpSummary,
+    aes(Groups, avg_temp, ymin = avg_temp - temp_sd, ymax = avg_temp + temp_sd),
+    colour = 'green',
+    width = 0.4) 
+  
+```
+
+
+
+
+
+# Error bars
+```{r}
+df <- data.frame(
+  trt = factor(c(1, 1, 2, 2)),
+  resp = c(1, 5, 3, 4),
+  group = factor(c(1, 2, 1, 2)),
+  upper = c(1.1, 5.3, 3.3, 4.2),
+  lower = c(0.8, 4.6, 2.4, 3.6)
+)
+
+p <- ggplot(df, aes(trt, resp, colour = group))
+p + geom_linerange(aes(ymin = lower, ymax = upper))
+p + geom_pointrange(aes(ymin = lower, ymax = upper))
+p + geom_crossbar(aes(ymin = lower, ymax = upper), width = 0.2)
+p + geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2)
+
+
+q <- ggplot(ASQGpSummary, aes(Groups, avg_temp,colour = Groups))
+q + geom_linerange(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
+					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd))
+q + geom_pointrange(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
+					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd))
+q + geom_crossbar(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
+					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd),
+				  width = 0.2)
+q + geom_errorbar(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
+					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd),
+				  width = 0.2)
+
+
+q <- ggplot(ASQGpSummary, aes(Groups, avg_temp,colour = Groups))
+z <- q + geom_linerange(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
+					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd))
+z <- z + geom_pointrange(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
+					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd))
+# z <- z + geom_crossbar(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
+# 					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd),
+# 				  width = 0.2)
+z <- z + geom_errorbar(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
+					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd),
+				  width = 0.2)
+print(z)
+
+
+
+q + geom_linerange(aes(ymin = lower, ymax = upper))
+p + geom_pointrange(aes(ymin = lower, ymax = upper))
+p + geom_crossbar(aes(ymin = lower, ymax = upper), width = 0.2)
+p + geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2)
+
+
+# If you want to dodge bars and errorbars, you need to manually
+# specify the dodge width
+p <- ggplot(df, aes(trt, resp, fill = group))
+p +
+ geom_col(position = "dodge") +
+ geom_errorbar(aes(ymin = lower, ymax = upper), position = "dodge", width = 0.25)
+
+# Because the bars and errorbars have different widths
+# we need to specify how wide the objects we are dodging are
+dodge <- position_dodge(width=0.9)
+p +
+  geom_col(position = dodge) +
+  geom_errorbar(aes(ymin = lower, ymax = upper), position = dodge, width = 0.25)
+
+
+```
+
+
+<!--
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+-->
+
