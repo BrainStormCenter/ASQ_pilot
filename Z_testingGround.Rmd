@@ -260,26 +260,54 @@ q + geom_errorbar(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
 				  width = 0.2)
 
 
-q <- ggplot(ASQGpSummary, aes(Groups, avg_temp,colour = Groups))
+q <- ggplot(ASQGpSummary, aes(Groups, avg_temp, colour = Groups))
 z <- q + geom_linerange(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
 					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd))
 z <- z + geom_pointrange(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
 					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd))
-# z <- z + geom_crossbar(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
-# 					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd),
-# 				  width = 0.2)
 z <- z + geom_errorbar(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
 					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd),
 				  width = 0.2)
 print(z)
+# z <- z + geom_crossbar(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
+# 					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd),
+# 				  width = 0.2)
 
 
 
-q + geom_linerange(aes(ymin = lower, ymax = upper))
-p + geom_pointrange(aes(ymin = lower, ymax = upper))
-p + geom_crossbar(aes(ymin = lower, ymax = upper), width = 0.2)
-p + geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2)
+z2 <- ggplot(ASQGpSummary, aes(Groups, avg_temp, fill = Groups))
+z2 +
+	geom_col(position = dodge) +
+	geom_errorbar(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
+					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd),
+				  width = 0.2)
 
+
+z3 <- ggplot(ASQGpSummary, aes(Groups, avg_asqh, fill = Groups))
+z3 +
+	geom_col(position = dodge) +
+	geom_errorbar(aes(ymin = ASQGpSummary$avg_asqh - ASQGpSummary$asqh_sd,
+					   ymax = ASQGpSummary$avg_asqh + ASQGpSummary$asqh_sd),
+				  width = 0.2)
+
+# data2 %>% 
+
+plot(asq_heavy ~ asq_light, col=rainbow_hcl(3),
+	 data=data2, pch=16) +
+	legend("topleft", pch=16, col=rainbow_hcl(3), legend=unique(data2$Groups))
+
+
+
+(d <- ggplot(data2, aes(asq_light, asq_heavy), na.rm = TRUE) +
+		geom_point(aes(colour = Groups))
+) + scale_colour_hue(h = c(180, 360), l = 50, c = 160)
+
+d + scale_colour_hue()
+d + scale_colour_hue("Groups")
+d + scale_colour_hue(expression(Groups[beta]))
+d + scale_colour_hue(l = 50, c = 160)
+d + scale_colour_hue(h = c(180, 360), l = 50, c = 160)
+#test
 
 # If you want to dodge bars and errorbars, you need to manually
 # specify the dodge width
@@ -297,6 +325,72 @@ p +
 
 
 ```
+
+## CIRCULAR PLOTS
+```{r}
+df <- tibble(
+  x = rnorm(10000),
+  y = rnorm(10000)
+)
+ggplot(df, aes(x, y)) +
+  geom_hex() +
+  coord_fixed()
+
+
+ggplot(data2, aes(asq_light, asq_heavy)) +
+  geom_hex() +
+  coord_fixed()
+
+
+
+```
+
+```{r ---> Scatterplots}
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_smooth(se = FALSE) +
+  labs(
+    title = "Fuel efficiency generally decreases with engine size",
+    subtitle = "Two seaters (sports cars) are an exception because of their light weight",
+    caption = "Data from fueleconomy.gov"
+  )
+
+
+ggplot(data2, aes(max.temp, asq_heavy)) +
+	geom_point(aes(color = Groups), na.rm = TRUE) +
+	geom_smooth(se = FALSE, na.rm = TRUE) +
+	labs(
+		title = "ASQ-H scores may increase with max.temp"
+	)
+
+
+ggplot(HC, aes(max.temp, asq_heavy)) +
+	# geom_point(aes(color = Groups), na.rm = TRUE) +
+	geom_smooth(se = FALSE, na.rm = TRUE) +
+	labs(
+		title = "HC: Relationship between ASQ-H and max.temp"
+	)
+
+ggplot(FM, aes(max.temp, asq_heavy)) +
+	# geom_point(aes(color = Groups), na.rm = TRUE) +
+	geom_smooth(se = FALSE, na.rm = TRUE) +
+	labs(
+		title = "FM: Relationship between ASQ-H and max.temp"
+	)
+
+ggplot(CLBP, aes(max.temp, asq_heavy)) +
+	# geom_point(aes(color = Groups), na.rm = TRUE) +
+	geom_smooth(se = FALSE, na.rm = TRUE) +
+	labs(
+		title = "CLBP: Relationship between ASQ-H and max.temp"
+	)
+
+
+
+
+```
+
+
 
 
 <!--

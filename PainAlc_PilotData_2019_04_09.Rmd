@@ -129,9 +129,39 @@ data2 <- data2 %>%
 ```
 
 
+#	SMALLER DATASETS
+```{r ---> Data by group}
+#	Create group specific data sets
+#	Small data sets for looking at correlations of 3 variables
+
+HC <- data2 %>% 
+	filter(Groups == "HC")
+FM <- data2 %>% 
+	filter(Groups == "FM")
+CLBP <- data2 %>% 
+	filter(Groups == "CLBP")
+
+HCsm <- select(HC, asq_light, asq_heavy, max.temp)
+FMsm <- select(FM, asq_light, asq_heavy, max.temp)
+CLBPsm <- select(CLBP, asq_light, asq_heavy, max.temp)
+```
+
+
+
+
 ##		EXAMINE DATA: 3-Groups
 
-```{r ---> initial data summary}
+```{r ---> Numerical data summary}
+#		GROUP COUNTS
+data2 %>% 
+	count(Groups)
+
+data2 %>% 
+	group_by(Groups) %>%
+	summarise(
+		avgTemp = mean(max.temp, na.rm = TRUE)
+	)
+
 ASQGpSummary <- data2 %>% 
 	group_by(Groups) %>%
 	summarise(
@@ -144,20 +174,21 @@ ASQGpSummary <- data2 %>%
 	)
 
 
+
 ```
 
 
 
-```{R ---> Visual group descriptives}
+```{R ---> Bar chart descriptives}
 #	EXPLORING THE DATA OF THE 3 GROUPS
-
-#		GROUP COUNTS
-data2 %>% 
-	count(Groups)
-
 ggplot(data = data2) +
-	geom_bar(mapping = aes(x = Groups))
+	geom_bar(mapping = aes(x = Groups, fill = Groups))
 
+ggplot(data = data2, aes(fill = Groups)) +
+	geom_bar(mapping = aes(x = Groups))
+```
+
+```{r ---> Point graphs max.temp}
 #		GROUP PLOTS FOR max.temp FOR EACH GROUP = Version 1
 ggplot(data2, aes(Groups, max.temp, colour = Groups)) +
   geom_point() +
@@ -188,24 +219,39 @@ print(z)
 # 					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd),
 # 				  width = 0.2)
 
+```
 
 
 
-p <- ggplot(data2, aes(Groups, max.temp, colour = Groups))
-p + geom_linerange(aes(ymin = lower, ymax = upper))	
+```{r ---> Scatterplot for ASQ}
+#		GROUP PLOTS FOR asq_light by asq_heavy FOR EACH GROUP = Version 1
+(d <- ggplot(data2, aes(asq_light, asq_heavy), na.rm = TRUE) +
+		geom_point(aes(colour = Groups))
+) + scale_colour_hue(h = c(180, 360), l = 50, c = 160)
+
+#		GROUP PLOTS FOR asq_light by asq_heavy FOR EACH GROUP = Version 2
+plot(asq_heavy ~ asq_light, col=rainbow_hcl(3),
+	 data=data2, pch=16) +
+	legend("topleft", pch=16, col=rainbow_hcl(3), legend=unique(data2$Groups))
+
+
 	
 	
-	
-data2 %>% 
-	group_by(Groups) %>%
-	summarise(
-		avgTemp = mean(max.temp, na.rm = TRUE)
-	)
+
 
 
 ```
 
+```{r ---> ASQ and max.temp}
+#		ALL THREE GROUPS IN ONE GRAPH 
+ggplot(data2, aes(max.temp, asq_heavy)) +
+	geom_point(aes(color = Groups), na.rm = TRUE) +
+	geom_smooth(se = FALSE, na.rm = TRUE) +
+	labs(
+		title = "ASQ-H scores may increase with max.temp"
+	)
 
+```
 
 ```{r ---> Correlations, echo=TRUE}
 smallDa_subset <- data2 %>% 
@@ -465,17 +511,17 @@ data3 %>%
 		asqh_sd = sd(asq_heavy, na.rm = TRUE)
 	)
 
-data3 %>%  # THIS IS NOT WORKING
-group_by(data3$Groups) %>% 
-	summarise(MAXXtemp = count(data3$max.temp)
+# data3 %>%  # THIS IS NOT WORKING
+group_by(data2$Groups) %>% 
+	summarise(MAXXtemp = count(data2$max.temp)
 			  )
 
 #	ASQ MEANS AND SDs OF THE GROUPS
-data3 %>%
-	group_by(data3$Groups) %>%
+data2 %>%
+	group_by(Groups) %>%
 		summarise(
-			avg_temp = mean(data3$max.temp, na.rm = TRUE),
-			temp_sd = sd(data3$max.temp, na.rm = TRUE)
+			avg_temp1 = mean(max.temp, na.rm = TRUE),
+			temp_sd1 = sd(max.temp, na.rm = TRUE)
 			# avg_asql = mean(asq_light, na.rm = TRUE),
 			# asql_sd = sd(asq_light, na.rm = TRUE),
 			# avg_asqh = mean(asq_heavy, na.rm = TRUE),
@@ -483,17 +529,21 @@ data3 %>%
 		)
 
 #	HISTOGRAMS OF ASQ SCORES
-ggplot(data = data4) +
+ggplot(data = data2) +
 	geom_histogram(mapping = aes(x = asq_light))
 
-ggplot(data = data4) +
+ggplot(data = data2) +
 	geom_histogram(mapping = aes(x = asq_heavy))
 
 ggplot(data = data4) +
 	geom_histogram(mapping = aes(x = asq_light, color = Groups3)) 
 
-ggplot(data = data4) +
-	geom_histogram(mapping = aes(x = asq_heavy, color = Groups3)) 
+ggplot(data = data2) +
+	geom_histogram(mapping = aes(x = asq_heavy, color = Groups)) 
+
+ggplot(data = data2) +
+	geom_histogram(mapping = aes(x = asq_heavy, fill = Groups)) 
+
 ```
 
 
@@ -631,22 +681,8 @@ print(x = correlation_matrix,
 ```
 
 
-#	CREATING SMALLER DATASETS
-```{r Data by group}
-#	Create group specific data sets
-#	Small data sets for looking at correlations of 3 variables
 
-HC <- data4 %>% 
-	filter(Groups3 == "HC")
-FM <- data4 %>% 
-	filter(Groups3 == "FM")
-CLBP <- data4 %>% 
-	filter(Groups3 == "CLBP")
 
-HCsm <- select(HC, asq_light, asq_heavy,Max.temp)
-FMsm <- select(FM, asq_light, asq_heavy,Max.temp)
-CLBPsm <- select(CLBP, asq_light, asq_heavy,Max.temp)
-```
 
 #	EXPLORATORY ANALYSES
 	THE ANALYSES BELOW ARE BASED ON CHAPTER 7 OF R4DS
