@@ -230,8 +230,8 @@ ggplot() +
 
 
 
-# Error bars
-```{r}
+
+```{r ---> Error bars}
 df <- data.frame(
   trt = factor(c(1, 1, 2, 2)),
   resp = c(1, 5, 3, 4),
@@ -326,8 +326,8 @@ p +
 
 ```
 
-## CIRCULAR PLOTS
-```{r}
+
+```{r ---> Circular plots}
 df <- tibble(
   x = rnorm(10000),
   y = rnorm(10000)
@@ -391,7 +391,146 @@ ggplot(CLBP, aes(max.temp, asq_heavy)) +
 ```
 
 
+##	REGRESSION
+```{r ---> multiplot}
+# library(ggplot2)
+# 
+# test <- test_regressionData
 
+xyears <- test$Years
+y <- test$ppb
+group <- test$Gas
+p <- ggplot(test) +
+	aes(Years, ppb, shape = Gas) +
+	geom_point(aes(colour = Gas), size = 3) +
+	geom_point(colour = "grey90", size = 1.5) +
+	theme_bw() + 
+	xlab("Years") +
+	ylab("Concentrations (ppb)") +
+	ggtitle("Banizoumbou") + 
+	scale_y_continuous(breaks = seq(0 , 10, 1)) + 
+	scale_x_continuous(breaks = seq(1998, 2015, 1)) 
+
+print(p)
+
+ggplot(test, aes(Years, ppb, shape=Gas, colour=Gas, fill=Gas)) +
+  geom_smooth(method="lm") +
+  geom_point(size=3) +
+  theme_bw() + 
+  xlab("Years") +
+  ylab("Concentrations (ppb)") +
+  ggtitle("Banizoumbou") + 
+  expand_limits(y=0) +
+  scale_y_continuous(breaks = 0:10) + 
+  scale_x_continuous(breaks = 1998:2015)
+
+labels_Gas <- c(
+  "HNO" = expression(HNO[3]), 
+  "NH" = expression(NH[3]), 
+  "NO" = expression(NO[2])
+)
+
+ggplot(test, aes(Years, ppb, shape=Gas, colour=Gas, fill=Gas)) +
+  geom_smooth(method="lm") +
+  geom_point(size=3) +
+  theme_bw() + 
+  xlab("Years") +
+  ylab("Concentrations (ppb)") +
+  ggtitle("Banizoumbou") + 
+  expand_limits(y=0) +
+  scale_y_continuous(breaks = 0:10) + 
+  scale_x_continuous(breaks = 1998:2015) + 
+  scale_shape(labels = labels_Gas) + 
+  scale_colour_discrete(labels = labels_Gas) + 
+  scale_fill_discrete(labels = labels_Gas)
+
+
+ggplot(data2, aes(max.temp, asq_heavy, shape=Groups, 
+				  colour=Groups, fill=Groups)) + 
+	# geom_smooth(method = "gam", na.rm = TRUE) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	# geom_smooth(se = FALSE, na.rm = TRUE) +
+	# geom_smooth(method = "lm", na.rm = TRUE) +
+	geom_point(size=3) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Heavy") +
+	ggtitle("Test") +
+	expand_limits(y=0) +
+	scale_x_continuous(breaks = 43:50)
+
+
+ggplot(data2, aes(max.temp, asq_light, shape=Groups, 
+				  colour=Groups, fill=Groups)) + 
+	# geom_smooth(method = "gam", na.rm = TRUE) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	# geom_smooth(se = FALSE, na.rm = TRUE) +
+	# geom_smooth(method = "lm", na.rm = TRUE) +
+	geom_point(size=3) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Light") +
+	ggtitle("Test") +
+	expand_limits(y=0) +
+	scale_x_continuous(breaks = 43:50)# + 
+	# scale_shape(labels = labels_Gas) + 
+	# scale_colour_discrete(labels = labels_Gas) + 
+	# scale_fill_discrete(labels = labels_Gas)
+
+#		USING FACETS IS A EASY WAY TO CREATE MULTI-PANE GRAPHS
+#		EXAMPLE BASED ON 
+#		https://flowingdata.com/2016/03/22/comparing-ggplot2-and-r-base-graphics/
+
+sp <- ggplot(data2, aes(x = max.temp, y = asq_light)) +
+	geom_point(shape = 1) + 
+	facet_grid(. ~ Groups)
+print(sp)
+
+
+ggplot(data2, aes(x = max.temp, y = asq_light,
+				  shape = Groups, 
+				  colour = Groups,
+				  fill = Groups)) +
+	geom_point(shape = 1) + 
+	facet_grid(. ~ Groups) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Light") +
+	ggtitle("Test") +
+	expand_limits(y=0) +
+	# scale_x_continuous(breaks = c(43, 47, 50))
+	# scale_x_continuous(breaks = 43:50))
+	scale_x_continuous(waiver())
+
+
+
+
+
+p1 <- ggplot(mpg, aes(displ, hwy)) +
+  geom_point()
+p1
+
+# Manipulating the default position scales lets you:
+#  * change the axis labels
+p1 +
+  scale_x_continuous("Engine displacement (L)") +
+  scale_y_continuous("Highway MPG")
+
+# You can also use the short-cut labs().
+# Use NULL to suppress axis labels
+p1 + labs(x = NULL, y = NULL)
+
+#  * modify the axis limits
+p1 + scale_x_continuous(limits = c(2, 6))
+p1 + scale_x_continuous(limits = c(0, 10))
+
+#  * choose where the ticks appear
+p1 + scale_x_continuous(breaks = c(2, 4, 6))
+
+
+
+```
 
 <!--
 ## R Markdown

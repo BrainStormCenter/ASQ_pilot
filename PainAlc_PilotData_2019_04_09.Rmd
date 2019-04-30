@@ -103,13 +103,14 @@ levels(dataFactors$painduration)
 ##		CREATING NEW VARIABLE 
 ```{r ---> ASQ-L rowwise}
 #		THIS SEEMS TO WORK VERY WELL April 19, 2019
-data2 <- data1 %>%
-    mutate_at(vars(starts_with("asq_")), as.numeric) %>%
-    rowwise() %>% 
-    mutate(asq_light = mean(c(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a,
-                              asq_6a, asq_7a, asq_8a, asq_9a), na.rm = TRUE)) %>%
-    ungroup() # %>% 
-    # select(asq_light, starts_with("asq_")) %>%
+data2 <- data1
+
+data2 <- data2 %>%
+	mutate_at(vars(starts_with("asq_")), as.numeric) %>%
+	rowwise() %>% 
+	mutate(asq_light = mean(c(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a, asq_6a, asq_7a, asq_8a, asq_9a), na.rm = TRUE)) %>%
+	ungroup() # %>% 
+# select(asq_light, starts_with("asq_")) %>%
 	# head(10)
 
 ```
@@ -120,8 +121,7 @@ data2 <- data1 %>%
 data2 <- data2 %>% 
     mutate_at(vars(starts_with("asq_")), as.numeric) %>%
     rowwise() %>% 
-    mutate(asq_heavy = mean(c(asq_10a, asq_11a, asq_12a, asq_13a, asq_14a,
-						  asq_15a), na.rm = TRUE)) %>%
+    mutate(asq_heavy = mean(c(asq_10a, asq_11a, asq_12a, asq_13a, asq_14a,asq_15a), na.rm = TRUE)) %>%
     ungroup() #%>% 
     # select(asq_heavy, starts_with("asq_")) %>% 
     # head(10)
