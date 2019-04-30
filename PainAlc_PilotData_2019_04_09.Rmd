@@ -116,6 +116,8 @@ data2 <- data2 %>%
 ```
 
 
+
+
 ```{r ---> ASQ-H rowwise}
 #		THIS SEEMS TO WORK VERY WELL April 19, 2019
 data2 <- data2 %>% 
@@ -128,6 +130,21 @@ data2 <- data2 %>%
 
 ```
 
+```{r ---> ASQ-Avg rowwise}
+#		THIS SEEMS TO WORK VERY WELL April 19, 2019
+data2 <- data2 %>% 
+	mutate_at(vars(starts_with("asq_")), as.numeric) %>%
+	rowwise() %>% 
+	mutate(asq_avg = mean(c(asq_1a, asq_2a, asq_3a, asq_4a,
+							  asq_5a, asq_6a, asq_7a, asq_8a,
+							  asq_9a, asq_10a, asq_11a, asq_12a,
+							  asq_13a, asq_14a,asq_15a), 
+							na.rm = TRUE)) %>%
+    ungroup() #%>% 
+    # select(asq_heavy, starts_with("asq_")) %>% 
+    # head(10)
+
+```
 
 #	SMALLER DATASETS
 ```{r ---> Data by group}
@@ -140,6 +157,8 @@ FM <- data2 %>%
 	filter(Groups == "FM")
 CLBP <- data2 %>% 
 	filter(Groups == "CLBP")
+
+Pain <- filter(data2, Groups != "HC")
 
 HCsm <- select(HC, asq_light, asq_heavy, max.temp)
 FMsm <- select(FM, asq_light, asq_heavy, max.temp)

@@ -486,7 +486,7 @@ sp <- ggplot(data2, aes(x = max.temp, y = asq_light)) +
 	facet_grid(. ~ Groups)
 print(sp)
 
-
+#		MULTI-PANE OF ASQ-LIGHT AND MAX.TEMP BY GROUP
 ggplot(data2, aes(x = max.temp, y = asq_light,
 				  shape = Groups, 
 				  colour = Groups,
@@ -497,7 +497,77 @@ ggplot(data2, aes(x = max.temp, y = asq_light,
 	theme_bw() +
 	xlab("Max Temp") +
 	ylab("ASQ Light") +
-	ggtitle("Test") +
+	ggtitle("ASQ-Light by Max Temp") +
+	expand_limits(y=0) +
+	# scale_x_continuous(breaks = c(43, 47, 50))
+	# scale_x_continuous(breaks = 43:50))
+	scale_x_continuous(waiver())
+
+#		MULTI-PANE OF ASQ-HEAVY AND MAX.TEMP BY GROUP
+ggplot(data2, aes(x = max.temp, y = asq_heavy,
+				  shape = Groups, 
+				  colour = Groups,
+				  fill = Groups)) +
+	geom_point(shape = 1) + 
+	facet_grid(. ~ Groups) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Heavy") +
+	ggtitle("ASQ-Heavy by Max Temp") +
+	expand_limits(y=0) +
+	# scale_x_continuous(breaks = c(43, 47, 50))
+	# scale_x_continuous(breaks = 43:50))
+	scale_x_continuous(waiver())
+
+
+ggplot(data2, aes(x = max.temp, y = asq_avg,
+				  shape = Groups, 
+				  colour = Groups,
+				  fill = Groups)) +
+	facet_grid(. ~ Groups) +
+	geom_point(shape = 1) + 
+	geom_smooth(se = TRUE, method = lm, 
+				# formula = y ~ log(x),
+				formula = y ~ poly(x, 2),
+				# formula = y ~ x,
+				# formula = y ~ splines::bs(x, 3),
+				na.rm = TRUE) +
+	# geom_smooth(method = "glm", na.rm = TRUE) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Avg") +
+	ggtitle("ASQ-Avg by Max Temp") +
+	expand_limits(y=0) +
+	# scale_x_continuous(breaks = c(43, 47, 50))
+	# scale_x_continuous(breaks = 43:50))
+	scale_x_continuous(waiver())
+
+
+
+ggplot(data2, aes(x = max.temp, y = asq_avg,
+				  shape = Groups, 
+				  colour = Groups,
+				  fill = Groups)) +
+	facet_grid(. ~ Groups) +
+	geom_point(shape = 1) + 
+	stat_smooth(se = TRUE, # standard errors
+				method = "auto", 
+				geom = "smooth", # smoothing command
+				n = 45, # number of points used to smooth
+				span = .75, # amount of smoothing
+				fullrange = TRUE, # smooth the plot or the data
+				level = 0.95, # confidence interval
+				# formula = y ~ log(x),
+				# formula = y ~ poly(x, 2),
+				# formula = y ~ x,
+				# formula = y ~ splines::bs(x, 3),
+				na.rm = TRUE) +
+	# geom_smooth(method = "glm", na.rm = TRUE) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Avg") +
+	ggtitle("ASQ-Avg by Max Temp") +
 	expand_limits(y=0) +
 	# scale_x_continuous(breaks = c(43, 47, 50))
 	# scale_x_continuous(breaks = 43:50))
@@ -506,27 +576,6 @@ ggplot(data2, aes(x = max.temp, y = asq_light,
 
 
 
-
-p1 <- ggplot(mpg, aes(displ, hwy)) +
-  geom_point()
-p1
-
-# Manipulating the default position scales lets you:
-#  * change the axis labels
-p1 +
-  scale_x_continuous("Engine displacement (L)") +
-  scale_y_continuous("Highway MPG")
-
-# You can also use the short-cut labs().
-# Use NULL to suppress axis labels
-p1 + labs(x = NULL, y = NULL)
-
-#  * modify the axis limits
-p1 + scale_x_continuous(limits = c(2, 6))
-p1 + scale_x_continuous(limits = c(0, 10))
-
-#  * choose where the ticks appear
-p1 + scale_x_continuous(breaks = c(2, 4, 6))
 
 
 
