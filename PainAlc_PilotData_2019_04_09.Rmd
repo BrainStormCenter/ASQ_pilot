@@ -85,66 +85,99 @@ data1 <- filter(data1, Groups != "other")
 
 ```
 
-###			NOTES
-THE COMMAND read.csv CAN PULL THE RAW DATA FROM GITHUB. 
-THE COMMAND read_csv COULD NOT PULL THE RAW DATA FROM GITHUB. 
+##	NOTES
+```{r}
+#	THE COMMAND read.csv CAN PULL THE RAW DATA FROM GITHUB. 
+#	THE COMMAND read_csv COULD NOT PULL THE RAW DATA FROM GITHUB. 
 
+# sex (1=male, 2=female)
+```
 
 
 ## CHECK THAT THE DATA ARE THE CORRECT FORMAT/TYPE
 ```{r Factor check}
 #	CHECK WHICH VARIABLES ARE CODED AS FACTORS AND THEIR LEVELS
-dataFactors <- select_if(data1, is.factor)
+dataFactors <- select_if(dat.asq2, is.factor)
 colnames(dataFactors)
 levels(dataFactors$painduration)
+
+# sex (1=male, 2=female)
 ```
 
 
-##		CREATING NEW VARIABLE 
+##		CREATING NEW VARIABLES
+```{r ---> ASQ Z-scores}
+data2 <- data1
+#		CALCULATED BY SEX
+dat.asq  <- data2
+
+dat.asq <- dat.asq %>% 
+	group_by(sex) %>%
+	mutate_at(vars(ends_with("a")),
+			  list(z = ~as.vector(scale(.)))) %>% 
+	ungroup()
+
+```
+
 ```{r ---> ASQ-L rowwise}
 #		THIS SEEMS TO WORK VERY WELL April 19, 2019
-data2 <- data1
-
-data2 <- data2 %>%
+dat.asq <- dat.asq %>% 
 	mutate_at(vars(starts_with("asq_")), as.numeric) %>%
 	rowwise() %>% 
-	mutate(asq_light = mean(c(asq_1a, asq_2a, asq_3a, asq_4a, asq_5a, asq_6a, asq_7a, asq_8a, asq_9a), na.rm = TRUE)) %>%
-	ungroup() # %>% 
-# select(asq_light, starts_with("asq_")) %>%
-	# head(10)
+	mutate(asq_light = mean(c(asq_1a, asq_2a, asq_3a,
+							  asq_4a, asq_5a, asq_6a, 
+							  asq_7a, asq_8a, asq_9a),
+							na.rm = TRUE)) %>%
+	ungroup() 
 
 ```
-
-
-
 
 ```{r ---> ASQ-H rowwise}
 #		THIS SEEMS TO WORK VERY WELL April 19, 2019
-data2 <- data2 %>% 
+dat.asq <- dat.asq %>% 
     mutate_at(vars(starts_with("asq_")), as.numeric) %>%
     rowwise() %>% 
-    mutate(asq_heavy = mean(c(asq_10a, asq_11a, asq_12a, asq_13a, asq_14a,asq_15a), na.rm = TRUE)) %>%
-    ungroup() #%>% 
-    # select(asq_heavy, starts_with("asq_")) %>% 
-    # head(10)
+    mutate(asq_heavy = mean(c(asq_10a, asq_11a, asq_12a,
+    						  asq_13a, asq_14a,asq_15a),
+    						na.rm = TRUE)) %>%
+    ungroup()
 
 ```
 
-```{r ---> ASQ-Avg rowwise}
+
+```{r ---> ASQ-Lz rowwise}
 #		THIS SEEMS TO WORK VERY WELL April 19, 2019
-data2 <- data2 %>% 
+dat.asq <- dat.asq %>%
 	mutate_at(vars(starts_with("asq_")), as.numeric) %>%
 	rowwise() %>% 
-	mutate(asq_avg = mean(c(asq_1a, asq_2a, asq_3a, asq_4a,
-							  asq_5a, asq_6a, asq_7a, asq_8a,
-							  asq_9a, asq_10a, asq_11a, asq_12a,
-							  asq_13a, asq_14a,asq_15a), 
+	mutate(asq_lz = mean(c(asq_1a_z, asq_2a_z, asq_3a_z, 
+							  asq_4a_z, asq_5a_z, asq_6a_z,
+							  asq_7a_z, asq_8a_z, asq_9a_z),
 							na.rm = TRUE)) %>%
-    ungroup() #%>% 
-    # select(asq_heavy, starts_with("asq_")) %>% 
-    # head(10)
+	ungroup()
 
 ```
+
+```{r ---> ASQ-Hz rowwise}
+#		THIS SEEMS TO WORK VERY WELL April 19, 2019
+dat.asq <- dat.asq %>% 
+    mutate_at(vars(starts_with("asq_")), as.numeric) %>%
+    rowwise() %>% 
+    mutate(asq_hz = mean(c(asq_10a_z, asq_11a_z, asq_12a_z,
+    						  asq_13a_z, asq_14a_z,asq_15a_z),
+    						na.rm = TRUE)) %>%
+    ungroup() 
+
+```
+
+
+```{r ---> Filter ASQ Outliers}
+#		REMOVING OUTLIERS FROM ASQ Z-SCORES
+dat.asq2 <- filter(dat.asq, is.na(asq_hz) | asq_hz <= 2)
+dat.asq2 <- filter(dat.asq2, is.na(asq_lz) | asq_lz <= 2)
+
+```
+
 
 #	SMALLER DATASETS
 ```{r ---> Data by group}
@@ -172,16 +205,37 @@ CLBPsm <- select(CLBP, asq_light, asq_heavy, max.temp)
 
 ```{r ---> Numerical data summary}
 #		GROUP COUNTS
-data2 %>% 
+dat.asq %>% 
+	count(Groups)
+dat.asq2 %>% 
 	count(Groups)
 
-data2 %>% 
+dat.asq %>% 
 	group_by(Groups) %>%
 	summarise(
-		avgTemp = mean(max.temp, na.rm = TRUE)
+		avgTempGp = mean(max.temp, na.rm = TRUE)
+	)
+dat.asq2 %>% 
+	group_by(sex) %>%
+	summarise(
+		avgTempSex = mean(max.temp, na.rm = TRUE)
 	)
 
-ASQGpSummary <- data2 %>% 
+# ASQ_Zsmry <-
+	dat.asq2 %>% 
+	group_by(sex) %>%
+	summarise(
+		avgASQ.lzSex = mean(asq_lz, na.rm = TRUE),
+		avgASQ.hzSex = mean(asq_hz, na.rm = TRUE)
+	)
+View(ASQ_Zsmry)
+
+ggplot(data = ASQ_Zsmry) +
+	geom_bar(mapping = aes(x = avgASQ.lzSex, fill = sex))
+
+plot(ASQ_Zsmry)
+
+ASQ_Smry2 <- dat.asq2 %>% 
 	group_by(Groups) %>%
 	summarise(
 		avg_temp = mean(max.temp, na.rm = TRUE),
@@ -195,82 +249,246 @@ ASQGpSummary <- data2 %>%
 
 
 ```
+## |
+## 	PLOTS
 
-
-
-```{R ---> Bar chart descriptives}
+```{R ---> Bar chart Group size}
 #	EXPLORING THE DATA OF THE 3 GROUPS
-ggplot(data = data2) +
+ggplot(data = dat.asq2) +
 	geom_bar(mapping = aes(x = Groups, fill = Groups))
 
-ggplot(data = data2, aes(fill = Groups)) +
+ggplot(data = dat.asq, aes(fill = Groups)) +
 	geom_bar(mapping = aes(x = Groups))
 ```
 
-```{r ---> Point graphs max.temp}
-#		GROUP PLOTS FOR max.temp FOR EACH GROUP = Version 1
-ggplot(data2, aes(Groups, max.temp, colour = Groups)) +
+```{r ---> Boxplot for max.temp}
+#		GROUP PLOTS FOR max.temp FOR EACH GROUP = Ver 1
+ggplot(dat.asq, aes(Groups, max.temp, colour = Groups), na.rm = TRUE) +
   geom_point() +
-  geom_point(data = ASQGpSummary, aes(y = avg_temp), colour = 'purple3', size = 3)
+  geom_point(data = ASQ_Smry, aes(y = avg_temp), 
+  		   colour = 'purple3', size = 3)
 
-#		GROUP PLOTS FOR max.temp FOR EACH GROUP - WITH ERROR BARS = Version 2
+#		GROUP PLOTS FOR max.temp FOR EACH GROUP - WITH ERROR BARS = Ver 2
 ggplot() +
-	geom_point(data = data2, aes(Groups, max.temp, colour = Groups)) +
-	geom_point(data = ASQGpSummary, 
+	geom_point(data = dat.asq, aes(Groups, max.temp, colour = Groups)) +
+	geom_point(data = ASQ_Smry, 
 			   aes(Groups, avg_temp), colour = 'purple3', size = 5) +
 	geom_errorbar(
-		data = ASQGpSummary,
+		data = ASQ_Smry,
 		aes(Groups, avg_temp, ymin = avg_temp - temp_sd,
 			ymax = avg_temp + temp_sd), colour = 'green',
 		width = 0.5) 
 
-#		GROUP PLOTS FOR max.temp FOR EACH GROUP - WITH ERROR BARS = Version 3
-q <- ggplot(ASQGpSummary, aes(Groups, avg_temp,colour = Groups))
-z <- q + geom_linerange(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
-					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd))
-z <- z + geom_pointrange(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
-					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd))
-z <- z + geom_errorbar(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
-					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd),
-				  width = 0.2)
+#		GROUP PLOTS FOR max.temp FOR EACH GROUP - WITH ERROR BARS = Ver 3
+q <- ggplot(ASQ_Smry, aes(Groups, avg_temp,colour = Groups))
+
+z <- q + geom_linerange(aes(ymin = ASQ_Smry$avg_temp - ASQ_Smry$temp_sd,
+							ymax = ASQ_Smry$avg_temp + ASQ_Smry$temp_sd))
+z <- z + geom_pointrange(aes(ymin = ASQ_Smry$avg_temp - ASQ_Smry$temp_sd,
+							 ymax = ASQ_Smry$avg_temp + ASQ_Smry$temp_sd))
+z <- z + geom_errorbar(aes(ymin = ASQ_Smry$avg_temp - ASQ_Smry$temp_sd,
+						   ymax = ASQ_Smry$avg_temp + ASQ_Smry$temp_sd),
+					   width = 0.2)
 print(z)
-# z <- z + geom_crossbar(aes(ymin = ASQGpSummary$avg_temp - ASQGpSummary$temp_sd,
-# 					   ymax = ASQGpSummary$avg_temp + ASQGpSummary$temp_sd),
-# 				  width = 0.2)
+
 
 ```
 
 
 
-```{r ---> Scatterplot for ASQ}
-#		GROUP PLOTS FOR asq_light by asq_heavy FOR EACH GROUP = Version 1
-(d <- ggplot(data2, aes(asq_light, asq_heavy), na.rm = TRUE) +
+```{r ---> Scatterplot ASQ-L by ASQ-H}
+#		GROUP PLOTS FOR asq_light by asq_heavy FOR EACH GROUP = Ver-1
+(d <- ggplot(dat.asq, aes(asq_light, asq_heavy), na.rm = TRUE) +
 		geom_point(aes(colour = Groups))
 ) + scale_colour_hue(h = c(180, 360), l = 50, c = 160)
 
-#		GROUP PLOTS FOR asq_light by asq_heavy FOR EACH GROUP = Version 2
+(dz <- ggplot(dat.asq2, aes(asq_lz, asq_hz), na.rm = TRUE) +
+		geom_point(aes(colour = Groups))
+) + scale_colour_hue(h = c(180, 360), l = 50, c = 160)
+
+#		GROUP PLOTS FOR asq_light by asq_heavy FOR EACH GROUP = Ver-2
 plot(asq_heavy ~ asq_light, col=rainbow_hcl(3),
-	 data=data2, pch=16) +
-	legend("topleft", pch=16, col=rainbow_hcl(3), legend=unique(data2$Groups))
+	 data=dat.asq, pch=16) +
+	legend("topleft", pch=16, col=rainbow_hcl(3), 
+		   legend=unique(dat.asq$Groups))
 
 
+plot(asq_hz ~ asq_lz, col=rainbow_hcl(3),
+	 data=dat.asq, pch=16) +
+	legend("topleft", pch=16, col=rainbow_hcl(3), 
+		   legend=unique(dat.asq$Groups))	
 	
-	
 
+
+plot(asq_hz ~ asq_lz, col=rainbow_hcl(3),
+	 data=dat.asq2, pch=16) +
+	legend("topleft", pch=16, col=rainbow_hcl(3), 
+		   legend=unique(dat.asq2$Groups))	
 
 
 ```
 
 ```{r ---> ASQ and max.temp}
 #		ALL THREE GROUPS IN ONE GRAPH 
-ggplot(data2, aes(max.temp, asq_heavy)) +
+ggplot(dat.asq2, aes(max.temp, asq_heavy)) +
 	geom_point(aes(color = Groups), na.rm = TRUE) +
 	geom_smooth(se = FALSE, na.rm = TRUE) +
 	labs(
 		title = "ASQ-H scores may increase with max.temp"
 	)
 
+ggplot(dat.asq2, aes(max.temp, asq_hz)) +
+	geom_point(aes(color = Groups), na.rm = TRUE) +
+	geom_smooth(
+		method = "auto",
+		se = FALSE, na.rm = TRUE) +
+	labs(
+		title = "ASQ-H scores may increase with max.temp"
+	)
+
 ```
+
+```{r ---> Facets ASQ by Max temp}
+#		USING FACETS IS A EASY WAY TO CREATE MULTI-PANE GRAPHS
+#		EXAMPLE BASED ON 
+#		https://flowingdata.com/2016/03/22/comparing-ggplot2-and-r-base-graphics/
+
+#		MULTI-PANE OF ASQ-LIGHT AND MAX.TEMP BY GROUP
+ggplot(dat.asq2, aes(x = max.temp, y = asq_light,
+				  shape = Groups, 
+				  colour = Groups,
+				  fill = Groups)) +
+	geom_point(shape = 1) + 
+	facet_grid(. ~ Groups) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Light") +
+	ggtitle("ASQ-Light by Max Temp") +
+	expand_limits(y=0) +
+	# scale_x_continuous(breaks = c(43, 47, 50))
+	# scale_x_continuous(breaks = 43:50))
+	scale_x_continuous(waiver())
+
+#		MULTI-PANE OF ASQ-LZ AND MAX.TEMP BY GROUP
+ggplot(dat.asq2, aes(x = max.temp, y = asq_lz,
+				  shape = Groups, 
+				  colour = Groups,
+				  fill = Groups)) +
+	geom_point(shape = 1) + 
+	facet_grid(. ~ Groups) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Light Z") +
+	ggtitle("ASQ-Light Z by Max Temp") +
+	expand_limits(y=0) +
+	# scale_x_continuous(breaks = c(43, 47, 50))
+	# scale_x_continuous(breaks = 43:50))
+	scale_x_continuous(waiver())
+
+
+#		MULTI-PANE OF ASQ-HEAVY AND MAX.TEMP BY GROUP
+ggplot(dat.asq2, aes(x = max.temp, y = asq_heavy,
+				  shape = Groups, 
+				  colour = Groups,
+				  fill = Groups)) +
+	geom_point(shape = 1) + 
+	facet_grid(. ~ Groups) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Heavy") +
+	ggtitle("ASQ-Heavy by Max Temp") +
+	expand_limits(y=0) +
+	# scale_x_continuous(breaks = c(43, 47, 50))
+	# scale_x_continuous(breaks = 43:50))
+	scale_x_continuous(waiver())
+
+
+#		MULTI-PANE OF ASQ-HZ AND MAX.TEMP BY GROUP
+ggplot(dat.asq2, aes(x = max.temp, y = asq_hz,
+				  shape = Groups, 
+				  colour = Groups,
+				  fill = Groups)) +
+	geom_point(shape = 1) + 
+	facet_grid(. ~ Groups) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Heavy Z") +
+	ggtitle("ASQ-Heavy Z by Max Temp") +
+	expand_limits(y=0) +
+	# scale_x_continuous(breaks = c(43, 47, 50))
+	# scale_x_continuous(breaks = 43:50))
+	scale_x_continuous(waiver())
+
+
+
+
+ggplot(data2, aes(x = max.temp, y = asq_avg,
+				  shape = Groups, 
+				  colour = Groups,
+				  fill = Groups)) +
+	facet_grid(. ~ Groups) +
+	geom_point(shape = 1) + 
+	geom_smooth(se = TRUE, method = lm, 
+				# formula = y ~ log(x),
+				formula = y ~ poly(x, 2),
+				# formula = y ~ x,
+				# formula = y ~ splines::bs(x, 3),
+				na.rm = TRUE) +
+	# geom_smooth(method = "glm", na.rm = TRUE) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Avg") +
+	ggtitle("ASQ-Avg by Max Temp") +
+	expand_limits(y=0) +
+	# scale_x_continuous(breaks = c(43, 47, 50))
+	# scale_x_continuous(breaks = 43:50))
+	scale_x_continuous(waiver())
+
+
+
+ggplot(data2, aes(x = max.temp, y = asq_avg,
+				  shape = Groups, 
+				  colour = Groups,
+				  fill = Groups)) +
+	facet_grid(. ~ Groups) +
+	geom_point(shape = 1) + 
+	stat_smooth(se = TRUE, # standard errors
+				method = "auto", 
+				geom = "smooth", # smoothing command
+				n = 45, # number of points used to smooth
+				span = .75, # amount of smoothing
+				fullrange = TRUE, # smooth the plot or the data
+				level = 0.95, # confidence interval
+				# formula = y ~ log(x),
+				# formula = y ~ poly(x, 2),
+				# formula = y ~ x,
+				# formula = y ~ splines::bs(x, 3),
+				na.rm = TRUE) +
+	# geom_smooth(method = "glm", na.rm = TRUE) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Avg") +
+	ggtitle("ASQ-Avg by Max Temp") +
+	expand_limits(y=0) +
+	# scale_x_continuous(breaks = c(43, 47, 50))
+	# scale_x_continuous(breaks = 43:50))
+	scale_x_continuous(waiver())
+
+
+
+
+
+
+
+```
+
+##	|
+
+##	CORRELATIONS V1
 
 ```{r ---> Correlations, echo=TRUE}
 smallDa_subset <- data2 %>% 
@@ -485,10 +703,73 @@ corr.data(data2) %>%
   coord_fixed()
 
 ```
-## small break
 
 
 
+```{r ---> ASQ by Max Temp}
+#		asq_heavy by max.temp
+ggplot(dat.asq, aes(max.temp, asq_heavy, shape=Groups, 
+				  colour=Groups, fill=Groups)) + 
+	# geom_smooth(method = "gam", na.rm = TRUE) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	# geom_smooth(se = FALSE, na.rm = TRUE) +
+	# geom_smooth(method = "lm", na.rm = TRUE) +
+	geom_point(size=3) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Heavy") +
+	ggtitle("ASQ-H by Max Temp") +
+	expand_limits(y=0) +
+	scale_x_continuous(breaks = 43:50)
+
+#		asq_hz by max.temp
+ggplot(dat.asq, aes(max.temp, asq_hz, shape=Groups, 
+				  colour=Groups, fill=Groups)) + 
+	# geom_smooth(method = "gam", na.rm = TRUE) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	# geom_smooth(se = FALSE, na.rm = TRUE) +
+	# geom_smooth(method = "lm", na.rm = TRUE) +
+	geom_point(size=3) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Heavy Z") +
+	ggtitle("ASQ-Hz by Max Temp") +
+	expand_limits(y=0) +
+	scale_x_continuous(breaks = 43:50)
+
+#		asq_light by max.temp
+ggplot(dat.asq, aes(max.temp, asq_light, shape=Groups, 
+				  colour=Groups, fill=Groups)) + 
+	# geom_smooth(method = "gam", na.rm = TRUE) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	# geom_smooth(se = FALSE, na.rm = TRUE) +
+	# geom_smooth(method = "lm", na.rm = TRUE) +
+	geom_point(size=3) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Light") +
+	ggtitle("ASQ-L by Max Temp") +
+	expand_limits(y=0) +
+	scale_x_continuous(breaks = 43:50)
+
+#		asq_lz by max.temp
+ggplot(dat.asq, aes(max.temp, asq_lz, shape=Groups, 
+				  colour=Groups, fill=Groups)) + 
+	# geom_smooth(method = "gam", na.rm = TRUE) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	# geom_smooth(se = FALSE, na.rm = TRUE) +
+	# geom_smooth(method = "lm", na.rm = TRUE) +
+	geom_point(size=3) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Light Z") +
+	ggtitle("ASQ-Lz by Max Temp") +
+	expand_limits(y=0) +
+	scale_x_continuous(breaks = 43:50)
+
+```
+
+### small break
 
 ```{r}
 # test
@@ -566,7 +847,9 @@ ggplot(data = data2) +
 ```
 
 
+### small break
 
+##	CORRELATIONS
 ```{r --> ASQ Correlations}
 #	LEARNING HOW TO CALCULATE CORRELATIONS
 #	CREATING A SMALLER DATASET OF ALL SUBJECTS
@@ -972,7 +1255,34 @@ plot(TukeyHSD(myModel2, "Groups3", rm.na = TRUE) )
 
 #####	STOP HERE AS OF April 13, 2019, 12:18 AM
 
+```{r -->> SANITY CHECK <<--}
+ASQsm <- select(dat.asq, ID, sex, asq_1a, asq_2a, asq_3a,
+							  asq_4a, max.temp)
 
+ASQsm  <- ASQsm %>% 
+	# mutate_at(vars(starts_with("asq_")), as.numeric) %>% 
+	rowwise() %>% 
+	mutate(testAvg2 = mean(c(asq_1a, asq_2a, asq_3a, asq_4a),
+						  na.rm = TRUE)) %>% 
+	ungroup()
+
+```
+
+```{r ---> ASQ-Avg rowwise}
+#		THIS SEEMS TO WORK VERY WELL April 19, 2019
+data2 <- data2 %>% 
+	mutate_at(vars(starts_with("asq_")), as.numeric) %>%
+	rowwise() %>% 
+	mutate(asq_avg = mean(c(asq_1a, asq_2a, asq_3a, asq_4a,
+							  asq_5a, asq_6a, asq_7a, asq_8a,
+							  asq_9a, asq_10a, asq_11a, asq_12a,
+							  asq_13a, asq_14a,asq_15a), 
+							na.rm = TRUE)) %>%
+    ungroup() #%>% 
+    # select(asq_heavy, starts_with("asq_")) %>% 
+    # head(10)
+
+```
 
 ```{r}
 select(data2,
@@ -1010,7 +1320,7 @@ my_data <-
 	)
 my_data2 <- asq_sm
 
-my_data2 <- my_data2 my_data$x
+my_data2 <- my_data2 my_data2$x
 
 bind_cols(my_data2(x = 1), my_data(y = 9))
 
