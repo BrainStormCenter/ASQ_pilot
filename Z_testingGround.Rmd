@@ -13,6 +13,182 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## PURPOSE: This document is for me to test various things in RStudio, usually found on the community website.
 
+##	MANIPULATING VARIABLE TYPES
+```{r ---> Sex as a factor}
+#Setting Factors(will create new variable for factors)
+ASQsm$sex = factor(ASQsm$sex,levels=c("1","2"))
+levels(ASQsm$sex)=c("Male","Female")
+
+#	CHECK WHICH VARIABLES ARE CODED AS FACTORS AND THEIR LEVELS
+dataFactors2 <- select_if(ASQsm, is.factor)
+colnames(dataFactors2)
+levels(dataFactors2$sex.factor)
+```
+
+
+##		SCORING THE ASQ
+		This is based on Meredith's code
+```{r ---> ASQ scoring}
+# First pull ASQ questions and Subj ID, and gender variables.
+#dat.asq <- dat.full[,c(1:2, grep("sex", colnames(dat.full)), grep("asq_[0-9]", colnames(dat.full)))] 
+dat.asq1 <- data1[,c(1:2, grep("sex", colnames(data1)), grep("asq_", colnames(data1)))] 
+
+#		GET ALL ASQ VARIABLES
+dat.asq2  <- select(data1, ID, sex, starts_with("asq"))
+#		GET ONLY ASQ VARIABLES USED FOR SCORING
+dat.asq1  <- select(data1, ID, sex, ends_with("a"))
+
+
+
+write.csv(dat.asq3, "ASQ_data_2019_04_30.csv", row.names = FALSE)
+```
+
+```{r ---> Z-scores v1}
+### COMPUTING STANDARDIZED PERSON MEAN IMPUTATION FOR SENSITIVITY (ASQ) WITHIN SAMPLE
+
+# Step 1. z-score each of the sensitivity items (i.e., asq_#a - the numeric/count variables)
+#		THE scale is generic function whose default method centers and/or
+#		scales the columns of a numeric matrix.
+
+dat <- data1
+
+#		CREATE A SMALLER DATA SET
+dat.asq <- select(dat, ID, sex, asq_1a, asq_2a, asq_3a, asq_4a)
+#		CLACULATE Z-SCORES
+dat.asq2 <- as.data.frame(scale(dat.asq[,c(grep("a$", colnames(dat.asq)))],
+								center = TRUE, scale = TRUE))
+#		ADD PREFIX TO CALCULATED SCORES
+names(dat.asq2) <- paste0("z", names(dat.asq2))
+#		ADD CALCULATED Z-SCORES TO INITIAL DATA SET
+dat.asq3 <-  bind_cols(dat.asq, dat.asq2)
+
+```
+
+```{r ---> Z-scores v2}
+#		FROM THE COMMUNITY
+# dat %>%
+#     as_tibble() %>% 
+#     filter(Groups != "other") %>% 
+#     select(ID, sex, asq_1a, asq_2a, asq_3a, asq_4a) %>% 
+#     mutate_at(vars(starts_with("asq")), list(z = ~as.vector(scale(.))))
+
+
+dat.asq3  <- dat.asq %>%
+	mutate_at(vars(starts_with("asq")),
+			  list(z = ~as.vector(scale(.))))
+```
+
+
+```{r ---> Z-scores v3}
+# 		CALCUALTE Z-SCORES BY SEX
+# sex (1=male, 2=female)
+dat.asq.f <- dat.asq %>% 
+	filter(sex == 2)
+dat.asq.m <- dat.asq %>% 
+	filter(sex == 1)
+
+
+dat.asq <- dat %>% 
+	group_by(sex) %>%
+	mutate_at(vars(starts_with("asq")),
+			  list(z = ~as.vector(scale(.)))) %>% 
+	ungroup()
+
+
+dat.asq2 <- dat.asq
+
+dat.asq2 <- dat.asq2 %>% 
+	group_by(sex) %>%
+	mutate_at(vars(ends_with("a")),
+			  list(z = ~as.vector(scale(.)))) %>% 
+	ungroup()
+
+
+dat.asq.f <- dat.asq.f %>% 
+	# group_by(sex) %>%
+	mutate_at(vars(starts_with("asq")),
+			  list(z = ~as.vector(scale(.)))) 
+	
+dat.asq2 <- dat.asq %>% 
+mutate(zasq_1a = scale(asq_1a)) %>% 
+	ungroup()
+
+
+
+
+
+dat <- read.csv(url('https://raw.githubusercontent.com/BrainStormCenter/ASQ_pilot/master/ASQ_pain_pilot_2019_04_19_v2.csv'), header = TRUE)
+dat %>%
+    as_tibble() %>% 
+    filter(Groups != "other") %>% 
+    select(ID, sex, asq_1a, asq_2a, asq_3a, asq_4a) %>% 
+	group_by(sex) %>%
+    mutate_at(vars(starts_with("asq")), list(z = ~as.vector(scale(.))))
+```
+
+
+
+
+
+
+
+
+
+```{r ---> SCRAP}
+dat.asq3 <- as.data.frame(scale(dat.asq[,c(grep("a$", colnames(dat.asq)))], 
+				  center = TRUE, scale = TRUE))
+
+dat.asq3  <- dat.asq3 %>%   rename_at(vars(contains('asq')), 
+							funs(sub('asq', 'zasq', .)))
+
+dat.asq4 <-  bind_cols(dat.asq, dat.asq3)
+
+dat.asq2 <- dat.asq %>% 
+mutate(zasq_1a = scale(asq_1a)) %>% 
+	ungroup()
+
+
+
+
+dat.asq.test3 <- dat.asq.test2
+
+
+dat.asq.test3 <- scale(dat.asq.test3[,c(grep("a$", colnames(dat.asq.test3)))], center = TRUE, scale = TRUE)
+
+#		BATCH RENAME VARIABLES
+dat4 <- as_tibble(dat.asq.test3)
+
+dat6  <- dat4 %>%   rename_at(vars(contains('asq')), 
+							funs(sub('asq', 'zasq', .)))
+
+
+
+vars <- as_tibble(c(dat5$ID, dat6$zasq_1a))
+# 
+# asq_1a, asq_2a, asq_3a, asq_4a,
+# asq_5a, asq_6a, asq_7a, asq_8a,
+# asq_9a, asq_10a, asq_11a, asq_12a,
+# asq_13a, asq_14a,asq_15a
+
+
+
+e1 <- new.env()
+e1$a <- 10
+e1$b <- 20
+as.list(e1)
+
+
+```
+		
+
+##	PDI Scoring
+```{r ---> Score PDI}
+# Pull PDI questions and Subj ID and session vars.
+grep("pdi", colnames(dat.asq), value = TRUE) #grep with printing col names instead of column #s
+dat.pdi <- dat.asq[,c(1,6, 27, grep("pdi", colnames(dat.asq)))] 
+
+```
+
 ## CORRELATIONS
 ```{r ---> creating data}
 library(tidyverse)
@@ -391,8 +567,8 @@ ggplot(CLBP, aes(max.temp, asq_heavy)) +
 ```
 
 
-##	REGRESSION
-```{r ---> multiplot}
+##	PLOTS WITH LINES
+```{r ---> multiplot v1}
 # library(ggplot2)
 # 
 # test <- test_regressionData
@@ -444,8 +620,12 @@ ggplot(test, aes(Years, ppb, shape=Gas, colour=Gas, fill=Gas)) +
   scale_colour_discrete(labels = labels_Gas) + 
   scale_fill_discrete(labels = labels_Gas)
 
+```
 
-ggplot(data2, aes(max.temp, asq_heavy, shape=Groups, 
+
+```{r ---> multiplot v2}
+#		asq_heavy by max.temp
+ggplot(dat.asq, aes(max.temp, asq_heavy, shape=Groups, 
 				  colour=Groups, fill=Groups)) + 
 	# geom_smooth(method = "gam", na.rm = TRUE) +
 	geom_smooth(method = "auto", na.rm = TRUE) +
@@ -455,12 +635,27 @@ ggplot(data2, aes(max.temp, asq_heavy, shape=Groups,
 	theme_bw() +
 	xlab("Max Temp") +
 	ylab("ASQ Heavy") +
-	ggtitle("Test") +
+	ggtitle("ASQ-H by Max Temp") +
 	expand_limits(y=0) +
 	scale_x_continuous(breaks = 43:50)
 
+#		asq_hz by max.temp
+ggplot(dat.asq, aes(max.temp, asq_hz, shape=Groups, 
+				  colour=Groups, fill=Groups)) + 
+	# geom_smooth(method = "gam", na.rm = TRUE) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	# geom_smooth(se = FALSE, na.rm = TRUE) +
+	# geom_smooth(method = "lm", na.rm = TRUE) +
+	geom_point(size=3) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Heavy Z") +
+	ggtitle("ASQ-Hz by Max Temp") +
+	expand_limits(y=0) +
+	scale_x_continuous(breaks = 43:50)
 
-ggplot(data2, aes(max.temp, asq_light, shape=Groups, 
+#		asq_light by max.temp
+ggplot(dat.asq, aes(max.temp, asq_light, shape=Groups, 
 				  colour=Groups, fill=Groups)) + 
 	# geom_smooth(method = "gam", na.rm = TRUE) +
 	geom_smooth(method = "auto", na.rm = TRUE) +
@@ -470,24 +665,49 @@ ggplot(data2, aes(max.temp, asq_light, shape=Groups,
 	theme_bw() +
 	xlab("Max Temp") +
 	ylab("ASQ Light") +
-	ggtitle("Test") +
+	ggtitle("ASQ-L by Max Temp") +
 	expand_limits(y=0) +
-	scale_x_continuous(breaks = 43:50)# + 
-	# scale_shape(labels = labels_Gas) + 
-	# scale_colour_discrete(labels = labels_Gas) + 
-	# scale_fill_discrete(labels = labels_Gas)
+	scale_x_continuous(breaks = 43:50)
 
+#		asq_lz by max.temp
+ggplot(dat.asq, aes(max.temp, asq_lz, shape=Groups, 
+				  colour=Groups, fill=Groups)) + 
+	# geom_smooth(method = "gam", na.rm = TRUE) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	# geom_smooth(se = FALSE, na.rm = TRUE) +
+	# geom_smooth(method = "lm", na.rm = TRUE) +
+	geom_point(size=3) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Light Z") +
+	ggtitle("ASQ-Lz by Max Temp") +
+	expand_limits(y=0) +
+	scale_x_continuous(breaks = 43:50)
+
+```
+
+
+
+
+```{r ---> multiplot v3}
 #		USING FACETS IS A EASY WAY TO CREATE MULTI-PANE GRAPHS
 #		EXAMPLE BASED ON 
 #		https://flowingdata.com/2016/03/22/comparing-ggplot2-and-r-base-graphics/
 
-sp <- ggplot(data2, aes(x = max.temp, y = asq_light)) +
+sp <- ggplot(dat.asq, aes(x = max.temp, y = asq_light),
+			 na.rm = TRUE) +
 	geom_point(shape = 1) + 
 	facet_grid(. ~ Groups)
 print(sp)
 
+spz <- ggplot(dat.asq, aes(x = max.temp, y = asq_lz),
+			 na.rm = TRUE) +
+	geom_point(shape = 1) + 
+	facet_grid(. ~ Groups)
+print(spz)
+
 #		MULTI-PANE OF ASQ-LIGHT AND MAX.TEMP BY GROUP
-ggplot(data2, aes(x = max.temp, y = asq_light,
+ggplot(dat.asq2, aes(x = max.temp, y = asq_light,
 				  shape = Groups, 
 				  colour = Groups,
 				  fill = Groups)) +
@@ -503,8 +723,26 @@ ggplot(data2, aes(x = max.temp, y = asq_light,
 	# scale_x_continuous(breaks = 43:50))
 	scale_x_continuous(waiver())
 
+#		MULTI-PANE OF ASQ-LZ AND MAX.TEMP BY GROUP
+ggplot(dat.asq2, aes(x = max.temp, y = asq_lz,
+				  shape = Groups, 
+				  colour = Groups,
+				  fill = Groups)) +
+	geom_point(shape = 1) + 
+	facet_grid(. ~ Groups) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Light Z") +
+	ggtitle("ASQ-Light Z by Max Temp") +
+	expand_limits(y=0) +
+	# scale_x_continuous(breaks = c(43, 47, 50))
+	# scale_x_continuous(breaks = 43:50))
+	scale_x_continuous(waiver())
+
+
 #		MULTI-PANE OF ASQ-HEAVY AND MAX.TEMP BY GROUP
-ggplot(data2, aes(x = max.temp, y = asq_heavy,
+ggplot(dat.asq2, aes(x = max.temp, y = asq_heavy,
 				  shape = Groups, 
 				  colour = Groups,
 				  fill = Groups)) +
@@ -519,6 +757,26 @@ ggplot(data2, aes(x = max.temp, y = asq_heavy,
 	# scale_x_continuous(breaks = c(43, 47, 50))
 	# scale_x_continuous(breaks = 43:50))
 	scale_x_continuous(waiver())
+
+
+#		MULTI-PANE OF ASQ-HZ AND MAX.TEMP BY GROUP
+ggplot(dat.asq2, aes(x = max.temp, y = asq_hz,
+				  shape = Groups, 
+				  colour = Groups,
+				  fill = Groups)) +
+	geom_point(shape = 1) + 
+	facet_grid(. ~ Groups) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Heavy Z") +
+	ggtitle("ASQ-Heavy Z by Max Temp") +
+	expand_limits(y=0) +
+	# scale_x_continuous(breaks = c(43, 47, 50))
+	# scale_x_continuous(breaks = 43:50))
+	scale_x_continuous(waiver())
+
+
 
 
 ggplot(data2, aes(x = max.temp, y = asq_avg,
