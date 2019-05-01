@@ -183,6 +183,7 @@ as.list(e1)
 
 ##	PDI Scoring
 ```{r ---> Score PDI}
+#		already seems scored as of May 1, 2019
 # Pull PDI questions and Subj ID and session vars.
 grep("pdi", colnames(dat.asq), value = TRUE) #grep with printing col names instead of column #s
 dat.pdi <- dat.asq[,c(1,6, 27, grep("pdi", colnames(dat.asq)))] 
