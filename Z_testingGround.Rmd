@@ -26,6 +26,47 @@ levels(dataFactors2$sex.factor)
 ```
 
 
+##	COMPATING DATA SET
+```{r ---> Community}
+library(fuzzyjoin)
+a <- tibble(
+  x = 1:5,
+  y = letters[1:5]
+)
+
+b <- tibble(
+  b.var1 = sample(1:10, 10, replace = T),
+  b.var2 = sample(1:10, 10, replace = T)
+)
+
+
+c <- tibble(
+  c.var1 = sample(1:10, 10, replace = T),
+  c.var2 = sample(1:10, 10, replace = T)
+)
+
+d <- b-c
+
+
+c$diff <- map2(b, c, ~ b - c)
+
+e <- fuzzy_full_join(b, c, by = NULL)
+
+# Extract by name or position
+# .default specifies value for elements that are missing or NULL
+l1 <- list(list(a = 1L), list(a = NULL, b = 2L), list(b = 3L))
+l1 %>% map("a", .default = "???")
+l1 %>% map_int("b", .default = NA)
+l1 %>% map_int(2, .default = NA)
+
+
+x <- list(1, 10, 100)
+y <- list(1, 2, 3)
+z <- list(5, 50, 500)
+
+```
+
+
 ##		SCORING THE ASQ
 		This is based on Meredith's code
 ```{r ---> ASQ scoring}
@@ -844,7 +885,129 @@ ggplot(data2, aes(x = max.temp, y = asq_avg,
 
 
 ```
+##	THINGS TO WORK ON
+```{r ---> Outliers}
+#	trying to use the function 'outlier'
 
+#first, just find and graph the outliers
+d1 <- sat.act
+d2 <- outlier(sat.act)
+
+dat.asq.out2 <- outlier(dat.asq.out, na.rm = TRUE)
+dat.asq.out3 <- data.frame(dat.asq.out,dat.asq.out2)
+pairs.panels(dat.asq.out3,bg=c("yellow","blue")[(dat.asq.out3 > 25)+1],pch=".", 
+			 method = "spearman",
+			 stars = TRUE,
+			 show.points = TRUE)
+
+
+#		quick stats summary function
+z_asq <- statsBy(dat.asq,"group")
+
+
+
+#combine with the data frame and plot it with the outliers highlighted in blue
+sat.d2 <- data.frame(sat.act,d2)
+pairs.panels(sat.d2,bg=c("yellow","blue")[(d2 > 25)+1],pch=21, 
+			 method = "spearman",
+			 show.points = TRUE)
+
+
+View(sat.act)
+
+
+#demonstrate not showing the data points
+data(sat.act)
+pairs.panels(sat.act,show.points=FALSE)
+#better yet is to show the points as a period
+pairs.panels(sat.act,pch=".")
+#show many variables with 0 gap between scatterplots
+# data(bfi)
+# pairs.panels(bfi,show.points=FALSE,gap=0)
+
+
+#plot raw data points and then the weighted correlations.
+#output from statsBy
+sb <- statsBy(sat.act,"education")
+pairs.panels(sb$mean,wt=sb$n)  #report the weighted correlations
+#compare with 
+pairs.panels(sb$mean) #unweighed correlations
+
+
+#to show 'significance'
+pairs.panels(iris[1:4],bg=c("red","yellow","blue")[iris$Species],
+			 pch=21+as.numeric(iris$Species),main="Fisher Iris data by Species",hist.col="red",stars=TRUE) 
+
+
+
+is_outlier1 <- function(x, na.rm=TRUE) {
+    return(x < quantile(x, na.rm = TRUE, 0.25) - 1.5 * IQR(x) | 
+    	   	x > quantile(x, na.rm = TRUE, 0.75) + 1.5 * IQR(x))
+}
+
+is_outlier2 <- function(x) {
+  x < quantile(x, 0.25) - (1.5 * IQR(x)) | 
+		x > quantile(x, 0.75) + (1.5 * IQR(x))
+}
+
+
+library(factoextra)
+library(rlang)
+
+data("ToothGrowth")
+tooth_growth <- ToothGrowth %>% 
+  tibble::rownames_to_column(var = "outlier") %>% 
+  mutate(dose = factor(dose))
+
+dat99 <- tooth_growth %>% 
+  group_by(dose) %>% 
+  mutate(outlier1 = if_else(is_outlier(len), len, rlang::na_dbl)) %>% 
+  group_by(dose, supp) %>%
+  mutate(outlier2 = if_else(is_outlier(len), len, rlang::na_dbl))
+
+
+dat.asq99  <- dat.asq.out %>%
+	group_by(group) %>% 
+	mutate(asq.outlier = is_outlier1(asq_lz), asq_lz, na.rm = TRUE)
+
+
+
+pos <- position_dodge(0.75)
+ggplot(dat99, aes(x = dose, y = len, fill = supp)) + 
+	geom_boxplot() +
+	stat_summary(fun.y = mean, geom = "point", shape = 10, size = 4, position = pos) +
+	geom_text(aes(label = outlier1), color = 'red', 
+			  na.rm = TRUE, 
+			  nudge_y = 0.05) +
+	geom_text(aes(label = outlier2), 
+			  na.rm = TRUE, 
+			  position = pos, 
+			  vjust = 0) +
+	theme_classic()
+	#theme_bw()
+
+
+
+
+
+iris %>% 
+    select(Petal.Width, Species) %>% 
+    group_by(Species) %>% 
+    mutate(outlier = is_outlier(Petal.Width)) %>% 
+    filter(outlier == FALSE) %>%
+    ggplot(aes(Species, Petal.Width, fill = Species)) +
+    geom_boxplot()
+
+
+
+
+
+
+
+
+#	how to add rownames?
+x <- 1:9; names(x) <- x
+```
 <!--
 ## R Markdown
 

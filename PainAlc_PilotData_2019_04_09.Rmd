@@ -52,8 +52,8 @@ dr_here(show_reason = FALSE)
 ```
 
 
-## IMPORT DATA FOR THE PILOT ANALYSES
-```{r Read-write files}
+## IMPORT DATA
+```{r ---> Pilot data}
 #		Data exported from RedCap on April 4, 2019
 
 #		RAW DATA ON GITHUB
@@ -71,9 +71,28 @@ data1 <- as_tibble(data0)
 #	LOOK FOR A WAY TO AVOID LOSING THIS SUBJECT ENTIRELY
 data1 <- filter(data1, Groups != "other")
 
-#		FOR SOME REASON THE COMMAND read_csv CAUSES PROBLEMS WITH THE ANALYSES BELOW
-#		THEREFORE I AM NOT USING IT AS OF April 23, 2019
+```
 
+
+##	NOTES
+```{r ---> ToDo}
+#		TRYING TO CREATE AN EASY WAY TO FILTER ASQ OUTLIERS
+asq_hzOut  <- which(dat.asq$asq_hz > 2)
+asq_lzOut  <- which(dat.asq$asq_hz > 2)
+asq_Zout  <- filter(dat.asq, asq_hz > 2 | asq_lz >2)
+
+asq_Zout2  <- which(dat.asq$asq_hz > 2 | dat.asq$asq_lz >2)
+
+outliers <- asq_Zout$ID
+View(outliers)
+
+
+
+asq_outliers2 <- filter(dat.asq, is.na(ID) | ID ! outliers)
+
+
+```
+```{r ---> Read/write files}
 #		UNCOMMENT TO WRITE A CSV FILE
 # write.csv(data2, "EXAMPLE.csv", row.names = FALSE)
 
@@ -85,42 +104,53 @@ data1 <- filter(data1, Groups != "other")
 
 ```
 
-##	NOTES
-```{r}
+```{r ---> Command information}
 #	THE COMMAND read.csv CAN PULL THE RAW DATA FROM GITHUB. 
 #	THE COMMAND read_csv COULD NOT PULL THE RAW DATA FROM GITHUB. 
 
+#		FOR SOME REASON THE COMMAND read_csv CAUSES PROBLEMS WITH THE ANALYSES BELOW
+#		THEREFORE I AM NOT USING IT AS OF April 23, 2019
+
 # sex (1=male, 2=female)
+```
+
+
+
+##	MANIPULATING VARIABLE TYPES
+```{r ---> Sex as a factor}
+#Setting Factors(will create new variable for factors)
+# sex (1=male, 2=female)
+data1$sex.fct = factor(data1$sex,levels=c("1","2"))
+levels(data1$sex.fct)=c("Male","Female")
+
+# ASQsm$sex = factor(ASQsm$sex,levels=c("1","2"))
+# levels(ASQsm$sex)=c("Male","Female")
+
+#	CHECK WHICH VARIABLES ARE CODED AS FACTORS AND THEIR LEVELS
+
 ```
 
 
 ## CHECK THAT THE DATA ARE THE CORRECT FORMAT/TYPE
-```{r Factor check}
+
+
+```{r ---> Factor check}
 #	CHECK WHICH VARIABLES ARE CODED AS FACTORS AND THEIR LEVELS
-dataFactors <- select_if(dat.asq2, is.factor)
+dataFactors <- select_if(data1, is.factor)
 colnames(dataFactors)
+levels(dataFactors$sex.fct)
 levels(dataFactors$painduration)
 
-# sex (1=male, 2=female)
+
+
+
 ```
 
 
 ##		CREATING NEW VARIABLES
-```{r ---> ASQ Z-scores}
-data2 <- data1
-#		CALCULATED BY SEX
-dat.asq  <- data2
-
-dat.asq <- dat.asq %>% 
-	group_by(sex) %>%
-	mutate_at(vars(ends_with("a")),
-			  list(z = ~as.vector(scale(.)))) %>% 
-	ungroup()
-
-```
-
 ```{r ---> ASQ-L rowwise}
-#		THIS SEEMS TO WORK VERY WELL April 19, 2019
+#		ASQ-LIGHT VARIABLE
+dat.asq <- data1
 dat.asq <- dat.asq %>% 
 	mutate_at(vars(starts_with("asq_")), as.numeric) %>%
 	rowwise() %>% 
@@ -132,8 +162,9 @@ dat.asq <- dat.asq %>%
 
 ```
 
+
 ```{r ---> ASQ-H rowwise}
-#		THIS SEEMS TO WORK VERY WELL April 19, 2019
+#		ASQ-HEAVY VARIABLE
 dat.asq <- dat.asq %>% 
     mutate_at(vars(starts_with("asq_")), as.numeric) %>%
     rowwise() %>% 
@@ -145,8 +176,23 @@ dat.asq <- dat.asq %>%
 ```
 
 
+```{r ---> ASQ Z-scores}
+# data2 <- data1
+
+#		Z-SCORES ARE CALCULATED BY SEX INDEPENDENTLY
+# dat.asq  <- data2
+
+dat.asq <- dat.asq %>% 
+	group_by(sex) %>%
+	mutate_at(vars(ends_with("a")),
+			  list(z = ~as.vector(scale(.)))) %>% 
+	ungroup()
+
+```
+
+
 ```{r ---> ASQ-Lz rowwise}
-#		THIS SEEMS TO WORK VERY WELL April 19, 2019
+#		ASQ-LIGHR Z-SCORE
 dat.asq <- dat.asq %>%
 	mutate_at(vars(starts_with("asq_")), as.numeric) %>%
 	rowwise() %>% 
@@ -158,8 +204,9 @@ dat.asq <- dat.asq %>%
 
 ```
 
+
 ```{r ---> ASQ-Hz rowwise}
-#		THIS SEEMS TO WORK VERY WELL April 19, 2019
+#		ASQ-HEAVY Z-SCORES
 dat.asq <- dat.asq %>% 
     mutate_at(vars(starts_with("asq_")), as.numeric) %>%
     rowwise() %>% 
@@ -170,13 +217,80 @@ dat.asq <- dat.asq %>%
 
 ```
 
+```{r ---> Test for outliers}
+#		create a subset for testing
+dat.asq.out  <- select(dat.asq, sex, group,
+					 asq_light, asq_heavy,
+					 asq_lz, asq_hz)
+
+```
+
+
+
 
 ```{r ---> Filter ASQ Outliers}
 #		REMOVING OUTLIERS FROM ASQ Z-SCORES
+dat.asq2 <- dat.asq
+
 dat.asq2 <- filter(dat.asq, is.na(asq_hz) | asq_hz <= 2)
 dat.asq2 <- filter(dat.asq2, is.na(asq_lz) | asq_lz <= 2)
 
 ```
+
+
+```{r ---> Re-estimate Z-scores}
+dat.asq3 <- dat.asq2
+
+dat.reasq.pre  <- select(dat.asq3, ID, sex, 
+					 asq_light, asq_heavy,
+					 ends_with("a"),
+					 ends_with("z"))
+
+dat.reasq.post  <- select(dat.asq3, ID, sex, 
+						  asq_light, asq_heavy,
+						  ends_with("a"))
+
+
+#		Z-SCORES BY SEX
+dat.reasq.post <- dat.reasq.post %>% 
+	group_by(sex) %>%
+	mutate_at(vars(ends_with("a")),
+			  list(z = ~as.vector(scale(.)))) %>% 
+	ungroup()
+#		ASQ-Lz
+dat.reasq.post <- dat.reasq.post %>% 
+	mutate_at(vars(starts_with("asq_")), as.numeric) %>%
+	rowwise() %>% 
+	mutate(asq_lz = mean(c(asq_1a_z, asq_2a_z, asq_3a_z, 
+						   asq_4a_z, asq_5a_z, asq_6a_z,
+						   asq_7a_z, asq_8a_z, asq_9a_z),
+						 na.rm = TRUE)) %>%
+	ungroup()
+#		ASQ-Hz
+dat.reasq.post <- dat.reasq.post %>% 
+	mutate_at(vars(starts_with("asq_")), as.numeric) %>%
+    rowwise() %>% 
+    mutate(asq_hz = mean(c(asq_10a_z, asq_11a_z, asq_12a_z,
+    						  asq_13a_z, asq_14a_z,asq_15a_z),
+    						na.rm = TRUE)) %>%
+    ungroup() 
+
+z.diff <- dat.reasq.post - dat.reasq.pre
+
+z.diff2  <- select(z.diff, ID, sex, 
+				   asq_light, asq_heavy,
+				   ends_with("z"))
+
+write.csv(dat.reasq.pre, "dat.reasq.pre.csv", row.names = FALSE)
+write.csv(dat.reasq.post, "dat.reasq.post.csv", row.names = FALSE)
+
+
+```
+
+
+
+
+
 
 
 #	SMALLER DATASETS
