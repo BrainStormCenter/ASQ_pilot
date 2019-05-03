@@ -26,7 +26,7 @@ levels(dataFactors2$sex.factor)
 ```
 
 
-##	COMPATING DATA SET
+##	CREATING DATA SET
 ```{r ---> Community}
 library(fuzzyjoin)
 a <- tibble(
@@ -80,13 +80,39 @@ dat.asq2  <- select(data1, ID, sex, starts_with("asq"))
 dat.asq1  <- select(data1, ID, sex, ends_with("a"))
 
 
-
-<<<<<<< HEAD
-# write.csv(dat.asq3, "ASQ_data_2019_04_30.csv", row.names = FALSE)
-=======
-write.csv(dat.asq3, "ASQ_data_2019_04_30.csv", row.names = FALSE)
->>>>>>> 97ad5899e691ab0acfc78002540fe5269088ac22
 ```
+
+
+```{r ---> ASQ-L rowwise}
+#		ASQ-LIGHT VARIABLE
+#		Z-SCORES NEED TO BE COMPUTED ROWWISE FOR EACH PERSON
+
+#		Create a data subset
+z.asq.sm  <- select(dat.asq, ID, sex, group, Groups, 
+					asq_1a, asq_2a, asq_3a,
+					asq_4a, asq_5a, asq_6a, 
+					asq_7a, asq_8a, asq_9a,
+					 asq_light, asq_heavy)
+					
+z.asq.sm1 <- z.asq.sm %>% 
+	group_by(sex) %>%
+	mutate_at(vars(ends_with("a")),
+			  list(z))
+#= ~as.vector(scale(.)))) %>% 
+	# list(z = ~as.vector(scale(.)))) %>% 
+	# ungroup()
+
+z.asq.sm <- z.asq.sm %>% 
+	# mutate_at(vars(starts_with("asq_")), as.numeric) %>%
+	rowwise() %>% 
+	mutate(z.asq.sm$asq_lz = scale(c(asq_1a, asq_2a, asq_3a,
+							  asq_4a, asq_5a, asq_6a, 
+							  asq_7a, asq_8a, asq_9a),
+							na.rm = TRUE))# %>%
+	# ungroup() 
+
+```
+
 
 ```{r ---> Z-scores v1}
 ### COMPUTING STANDARDIZED PERSON MEAN IMPUTATION FOR SENSITIVITY (ASQ) WITHIN SAMPLE
