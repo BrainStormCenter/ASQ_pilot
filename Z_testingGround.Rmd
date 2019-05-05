@@ -27,23 +27,60 @@ levels(dataFactors2$sex.factor)
 
 
 ##	CREATING DATA SET
-```{r ---> Community}
+```{r ---> Fuzzy join}
 library(fuzzyjoin)
+library(dplyr)
+
+z.dat3  <- select(dat, ID, sex, group, Groups)
+z.dat3 <- filter(z.dat3, Groups != "other")
+
+#		DIFFERENCE JOIN
+#		I am not understanding what the max_dist variable is doing
+head(iris)
+test  <- iris
+sepal_lengths <- tibble(Sepal.Length = c(5, 6, 7), Type = 1:3)
+z.test3 <- test %>%
+	difference_inner_join(sepal_lengths, max_dist = 0.1)
+
+
+# merge two data frames by ID
+total <- merge(z.dat3, z.dat2, by = "ID")
+
+
+
+
+
+
+
+
+```
+
+
+```{r ---> Working with tables}
+
+
+
+
 a <- tibble(
   x = 1:5,
   y = letters[1:5]
 )
 
-b <- tibble(
-  b.var1 = sample(1:10, 10, replace = T),
-  b.var2 = sample(1:10, 10, replace = T)
+zz.1 <- tibble(
+	zz1.var1 = 1:10,
+	zz1.var2 = sample(1:10, 10, replace = T),
+	zz1.var3 = sample(1:10, 10, replace = T)
 )
 
 
-c <- tibble(
-  c.var1 = sample(1:10, 10, replace = T),
-  c.var2 = sample(1:10, 10, replace = T)
+zz.2 <- tibble(
+	zz2.var1 = 1:10,
+	zz2.var2 = sample(1:10, 10, replace = T),
+	zz2.var3 = sample(1:10, 10, replace = T)
 )
+
+
+
 
 d <- b-c
 
@@ -63,6 +100,10 @@ l1 %>% map_int(2, .default = NA)
 x <- list(1, 10, 100)
 y <- list(1, 2, 3)
 z <- list(5, 50, 500)
+
+
+
+
 
 ```
 
@@ -112,6 +153,32 @@ z.asq.sm <- z.asq.sm %>%
 	# ungroup() 
 
 ```
+
+```{r ---> Z-scores by row}
+#		Community answer
+dat <- filter(dat, Groups != "other")
+
+z.dat1 <- dat %>%
+	as_tibble() %>%
+	filter(Groups != "other") %>%
+	select(ID, sex, ends_with("a")) %>%
+	gather(asq, value, -ID, -sex, na.rm = FALSE) %>%
+	group_by(ID) %>%
+	mutate(z = as.vector(scale(value))) %>%
+	pivot_wider(names_from = asq, values_from = c(value, z))
+
+dat.1  <- dat
+z.dat2 <- select(z.dat1, ID, starts_with("z"))
+
+
+# merge two data frames by ID
+total <- merge(dat.1, z.dat2, by = "ID")
+
+
+
+```
+
+
 
 
 ```{r ---> Z-scores v1}
@@ -315,6 +382,122 @@ cor.vals = cor(smData)
 
 ```
 
+To make graphs with ggplot2, the data must be in a data frame, and in “long” (as opposed to wide) format. If your data needs to be restructured, see this page for more information.
+http://www.cookbook-r.com/Manipulating_data/Converting_data_between_wide_and_long_format/
+
+
+##		RESHAPING DATA
+```{R ---> converting wide & long}
+olddata_wide <- read.table(header=TRUE, text='
+ subject sex control cond1 cond2
+       1   M     7.9  12.3  10.7
+       2   F     6.3  10.6  11.1
+       3   F     9.5  13.1  13.8
+       4   M    11.5  13.4  12.9
+')
+# Make sure the subject column is a factor
+olddata_wide$subject <- factor(olddata_wide$subject)
+
+olddata_long <- read.table(header=TRUE, text='
+ subject sex condition measurement
+       1   M   control         7.9
+       1   M     cond1        12.3
+       1   M     cond2        10.7
+       2   F   control         6.3
+       2   F     cond1        10.6
+       2   F     cond2        11.1
+       3   F   control         9.5
+       3   F     cond1        13.1
+       3   F     cond2        13.8
+       4   M   control        11.5
+       4   M     cond1        13.4
+       4   M     cond2        12.9
+')
+# Make sure the subject column is a factor
+olddata_long$subject <- factor(olddata_long$subject)
+
+# The arguments to gather():
+# - data: Data object
+# - key: Name of new key column (made from names of data columns)
+# - value: Name of new value column
+# - ...: Names of source columns that contain values
+# - factor_key: Treat the new key column as a factor (instead of character vector)
+data_long <- gather(olddata_wide, condition, measurement, control:cond2, factor_key=TRUE)
+data_long
+
+ASQ.wide <- ASQ.smry1
+ASQ.long <- gather(ASQ.wide, condition, measurement, avg.temp:avg.asq.hz, factor_key = TRUE)
+ASQ.long
+```
+
+##	PLOTS
+```{r ---> Bar charts}
+#	examples from
+#	http://www.cookbook-r.com/Graphs/Bar_and_line_graphs_(ggplot2)/
+
+# Stacked bar graph -- this is probably not what you want
+ggplot(data=dat1, aes(x=time, y=total_bill, fill=sex)) +
+    geom_bar(stat="identity")
+# Bar graph, time on x-axis, color fill grouped by sex -- use position_dodge()
+ggplot(data=dat1, aes(x=time, y=total_bill, fill=sex)) +
+    geom_bar(stat="identity", position=position_dodge())
+
+ggplot(data=dat1, aes(x=time, y=total_bill, fill=sex)) +
+    geom_bar(stat="identity", position=position_dodge(), colour="black")
+# Change colors
+ggplot(data=dat1, aes(x=time, y=total_bill, fill=sex)) +
+    geom_bar(stat="identity", position=position_dodge(), colour="black") +
+    scale_fill_manual(values=c("#999999", "#E69F00"))
+
+##############################
+# asq.z <- select(ASQ.smry1, avg.asq.hz, avg.asq.lz)
+
+ASQ.wide <- ASQ.smry1
+ASQ.long <- gather(ASQ.wide, condition, measurement, avg.temp:avg.asq.hz, factor_key = TRUE)
+ASQ.long
+filter(ASQ.long, !(condition == "avg.temp" |
+				   	condition == "temp.sd" |
+				   	condition == "asql.sd" |
+				   	condition == "asqh.sd")) %>% 
+	ggplot( aes(x=Groups, y=measurement,
+				fill=condition)) +
+	geom_bar(stat="identity", position=position_dodge())
+
+
+
+
+
+
+
+
+
+datn <- read.table(header=TRUE, text='
+supp dose length
+  OJ  0.5  13.23
+  OJ  1.0  22.70
+  OJ  2.0  26.06
+  VC  0.5   7.98
+  VC  1.0  16.77
+  VC  2.0  26.14
+')
+
+# Copy the data frame and convert dose to a factor
+datn2 <- datn
+datn2$dose <- factor(datn2$dose)
+
+
+# It is also possible to make a bar graph when the variable is treated as categorical rather than numeric.
+# Use datn2 from above
+ggplot(data=datn2, aes(x=dose, y=length, fill=supp)) +
+    geom_bar(stat="identity", position=position_dodge())
+
+# Use the original data frame, but put factor() directly in the plot specification
+ggplot(data=datn, aes(x=factor(dose), y=length, fill=supp)) +
+    geom_bar(stat="identity", position=position_dodge())
+
+
+
+```
 
 ```{r ---> plotting the above data}
 # Create plot
