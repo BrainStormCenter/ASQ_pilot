@@ -382,6 +382,22 @@ cor.vals = cor(smData)
 
 ```
 
+```{r ---> plot asq use factor by temp}
+library(plotly)
+
+z.use <- plot_ly(
+	x = dat.asq$typical_alc_use2.fct,
+	y = dat.asq$Groups,
+	name = "Use",
+	type = "bar"
+)
+
+print(z.use)
+
+```
+
+
+
 To make graphs with ggplot2, the data must be in a data frame, and in “long” (as opposed to wide) format. If your data needs to be restructured, see this page for more information.
 http://www.cookbook-r.com/Manipulating_data/Converting_data_between_wide_and_long_format/
 

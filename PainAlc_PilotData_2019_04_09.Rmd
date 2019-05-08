@@ -77,12 +77,18 @@ data1 <- filter(data1, Groups != "other")
 
 
 ##	MANIPULATING VARIABLE TYPES
-```{r ---> Sex as a factor}
+```{r ---> Setting factors}
 #Setting Factors(will create new variable for factors)
 # sex (1=male, 2=female)
 data1$sex.fct = factor(data1$sex,levels=c("1","2"))
 levels(dat.asq$sex.fct)=c("Male","Female")
 
+dat.asq$typical_alc_use1.fct = factor(dat.asq$typical_alc_use1,levels=c("0","1","2","3","4","5","6","7","8","9","10"))
+
+dat.asq$typical_alc_use2.fct = factor(dat.asq$typical_alc_use2,levels=c("0","1","2","3","4","5","6","7","8","9","10"))
+
+
+#factor(dat.asq$typical_alc_use2,levels=c("0","1","2","3","4","5","6","7","8","9","10"))
 # ASQsm$sex = factor(ASQsm$sex,levels=c("1","2"))
 # levels(ASQsm$sex)=c("Male","Female")
 
@@ -405,6 +411,62 @@ ggplot(dat.asq, aes(x = max.temp, y = asq_hz,
 	# scale_x_continuous(breaks = c(43, 47, 50))
 	# scale_x_continuous(breaks = 43:50))
 	scale_x_continuous(waiver())
+
+#		MAX TEMP BY ALCOHOL USE
+ggplot(dat.asq, aes(x = max.temp, y = typical_alc_use1,
+				  shape = Groups, 
+				  colour = Groups,
+				  fill = Groups)) +
+	geom_point(shape = 1) + 
+	facet_grid(. ~ Groups) +
+	# geom_smooth(method = "auto", na.rm = TRUE) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Light") +
+	ggtitle("ASQ-L by Temp") +
+	expand_limits(y=0) +
+	# scale_x_continuous(breaks = c(43, 47, 50))
+	# scale_x_continuous(breaks = 43:50))
+	scale_x_continuous(waiver())
+
+dat.asq.m <- filter(dat.asq, sex.fct ==1)
+dat.asq.f <- filter(dat.asq, sex.fct ==2)  
+	
+ggplot(dat.asq.m, aes(x = max.temp, y = typical_alc_use2.fct,
+				  shape = Groups, 
+				  colour = Groups,
+				  fill = Groups)) +
+	geom_point(shape = 1) + 
+	facet_grid(. ~ Groups) +
+	# geom_smooth(method = "auto", na.rm = TRUE) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	theme_bw() +
+	xlab("Max Temp") +
+	ylab("ASQ Light") +
+	ggtitle("ASQ-L by Temp") +
+	expand_limits(y=0) +
+	# scale_x_continuous(breaks = c(43, 47, 50))
+	# scale_x_continuous(breaks = 43:50))
+	scale_x_continuous(waiver())
+
+ggplot(dat.asq, aes(x = typical_alc_use2, y = max.temp,
+				  shape = Groups, 
+				  colour = Groups,
+				  fill = Groups)) +
+	geom_point(shape = 1) + 
+	facet_grid(. ~ Groups) +
+	# geom_smooth(method = "auto", na.rm = TRUE) +
+	geom_smooth(method = "auto", na.rm = TRUE) +
+	theme_bw() +
+	# xlab("Max Temp") +
+	# ylab("ASQ Use") +
+	# ggtitle("ASQ-Use by Temp") +
+	expand_limits(y=2) +
+	# scale_x_continuous(breaks = c(43, 47, 50))
+	# scale_y_continuous(breaks = 43:50)),
+	scale_x_continuous(waiver())
+
 
 ```
 
