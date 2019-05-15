@@ -26,9 +26,9 @@ The goal of these analyses is to look at the following relationships
 ##	LIBRARIES
 ```{r}
 #		To begin, one has to have an idea of what packages R will need to load to accomplish your goals. The packages below are the ones I will need to analyze the ASQ pilot data.
-library(ez)
 library(colorspace)
 library(psych)
+library(ez)
 library(fuzzyjoin)
 # library(ggplot2)
 library(corrplot)
@@ -38,16 +38,17 @@ here() # THIS SETS THE WORKING DIRECTORY TO THE LOCATION OF THIS FILE
 dr_here(show_reason = FALSE)
 
 #	OTHER POTENTIAL PACKAGES
-# library(doBy)
-# library(Hmisc)
-# library(janitor)	# This will be used to exclude empty columns
-# library(modelr)
-# library(PerformanceAnalytics)
-# library(purrr) # 	NOT NEEDED, INCLUDED IN TIDYVERSE
-# library(readxl) # This is used to import data from excel
-# library(readr)	# INCLUDED IN TIDYVERSE  options for reading csv data
-# library(reshape2)
-# library(stringr)
+library(doBy)
+library(Hmisc)
+library(modelr)
+library(readr)	# INCLUDED IN TIDYVERSE  options for reading csv data
+
+library(janitor)	# This will be used to exclude empty columns
+library(PerformanceAnalytics)
+library(purrr) # 	NOT NEEDED, INCLUDED IN TIDYVERSE
+library(readxl) # This is used to import data from excel
+library(reshape2)
+library(stringr)
 # options(na.action = na.exclude) NOT SURE HOW TO USE THIS
 
 ```
